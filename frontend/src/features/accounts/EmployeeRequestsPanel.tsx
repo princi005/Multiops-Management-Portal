@@ -13,7 +13,7 @@ import LoadingState from "../../components/LoadingState";
 import ErrorState from "../../components/ErrorState";
 import RequestStatusBadge from "../../components/RequestStatusBadge";
 import RequestFilterBar from "../../components/RequestFilterBar";
-import KeyValueEditor, { recordToRows, rowsToRecord, type KeyValueRow } from "../../components/KeyValueEditor";
+import KeyValueEditor, { rowsToRecord, type KeyValueRow } from "../../components/KeyValueEditor";
 import type { EmployeeRequest, RequestStatus } from "../../types/employeeRequest";
 
 function RequestDetails({ request }: { request: EmployeeRequest }) {

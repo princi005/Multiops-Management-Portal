@@ -84,11 +84,11 @@ export default function AuditHistoryPanel({
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-red-50 rounded-lg p-3">
                   <p className="text-xs font-semibold text-red-700 mb-2">Before</p>
-                  <SnapshotView snapshot={log.previous_value} accountLabel={accountLabel} />
+                  <SnapshotView snapshot={log.previous_value as JournalEntrySnapshot | null} accountLabel={accountLabel} />
                 </div>
                 <div className="bg-emerald-50 rounded-lg p-3">
                   <p className="text-xs font-semibold text-emerald-700 mb-2">After</p>
-                  <SnapshotView snapshot={log.new_value} accountLabel={accountLabel} />
+                  <SnapshotView snapshot={log.new_value as JournalEntrySnapshot | null} accountLabel={accountLabel} />
                 </div>
               </div>
             </div>
