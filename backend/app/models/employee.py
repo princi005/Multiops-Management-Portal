@@ -1,6 +1,8 @@
 """
-Employee model — links a User to HR/professional information.
-One user has at most one employee record (1:1).
+Employee model. AvailabilityStatus is separate from EmploymentStatus:
+employment_status is HR/legal (active, on leave, terminated...);
+availability_status is project-assignment-facing (can a Manager put
+this person on a new project right now).
 """
 
 import enum
@@ -19,6 +21,12 @@ class EmploymentStatus(str, enum.Enum):
     ON_LEAVE = "on_leave"
     INACTIVE = "inactive"
     TERMINATED = "terminated"
+
+
+class AvailabilityStatus(str, enum.Enum):
+    AVAILABLE = "available"
+    PARTIALLY_AVAILABLE = "partially_available"
+    UNAVAILABLE = "unavailable"
 
 
 class Employee(Base):
@@ -42,10 +50,14 @@ class Employee(Base):
         default=EmploymentStatus.ACTIVE,
         nullable=False,
     )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+    availability_status: Mapped[AvailabilityStatus] = mapped_column(
+        Enum(AvailabilityStatus, name="availability_status_enum"),
+        default=AvailabilityStatus.AVAILABLE,
+        nullable=False,
     )
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="employee")
     department: Mapped["Department | None"] = relationship(back_populates="employees")
+    skills: Mapped[list["EmployeeSkill"]] = relationship(cascade="all, delete-orphan")

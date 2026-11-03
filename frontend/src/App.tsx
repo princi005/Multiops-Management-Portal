@@ -7,6 +7,7 @@ import LoginPage from "./features/auth/LoginPage";
 import DashboardPage from "./features/auth/DashboardPage";
 import EmployeeListPage from "./features/hr/EmployeeListPage";
 import CeoDashboardPage from "./features/ceo/CeoDashboardPage";
+import AccountsPortalPage from "./features/accounts/AccountsPortalPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 function HomeRouter() {
@@ -24,12 +25,17 @@ function HomeRouter() {
     return <CeoDashboardPage />;
   }
 
+  if (user?.roles.includes("Accounts")) {
+    return <AccountsPortalPage />;
+  }
+
   if (user?.roles.includes("HR")) {
     return <EmployeeListPage />;
   }
 
   return <DashboardPage />;
 }
+
 function App() {
   const setSession = useAuthStore((s) => s.setSession);
   const setLoading = useAuthStore((s) => s.setLoading);

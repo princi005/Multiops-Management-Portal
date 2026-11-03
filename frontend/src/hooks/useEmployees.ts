@@ -50,3 +50,14 @@ export function useOnboardEmployee() {
     },
   });
 }
+
+export function useResetEmployeePassword() {
+  return useMutation({
+    mutationFn: async (employeeId: string) => {
+      const { data } = await apiClient.post<{ employee_id: string; email: string; temporary_password: string }>(
+        `/employees/${employeeId}/reset-password`
+      );
+      return data;
+    },
+  });
+}

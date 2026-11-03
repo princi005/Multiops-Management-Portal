@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 const ACCENT_MAP = {
   indigo: { dot: "bg-indigo-600", label: "text-indigo-600" },
   teal: { dot: "bg-teal-600", label: "text-teal-600" },
+  violet: { dot: "bg-violet-600", label: "text-violet-600" },
 } as const;
 
 export default function PortalHeader({
