@@ -16,6 +16,7 @@ from app.api.routes import (
     gl_accounts,
     health,
     journal_entries,
+    me,
     parties,
     payroll,
     projects,
@@ -52,3 +53,4 @@ app.include_router(payroll.router)
 app.include_router(skills.router)
 app.include_router(projects.router)
 app.include_router(tickets.router)
+app.include_router(me.router)
