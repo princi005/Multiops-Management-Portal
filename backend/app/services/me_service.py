@@ -1,12 +1,15 @@
 """
-Self-service reads for the logged-in user. Every query here is scoped to
-the caller's own employee record (looked up from their user id), so no
-employee id is ever accepted from the client - one person can never read
-another person's data through these endpoints.
+Self-service reads and edits for the logged-in user. Every query here is
+scoped to the caller's own employee record (looked up from their user id),
+so no employee id is ever accepted from the client - one person can never
+read or change another person's data through these endpoints.
 """
 
+import uuid
+
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -58,6 +61,62 @@ async def get_my_profile(db: AsyncSession, user: User) -> MyProfile:
         skills=skills,
         roles=sorted(ur.role.name for ur in user.user_roles),
     )
+
+
+async def set_my_skills(db: AsyncSession, user: User, names: list[str]) -> list[SkillTag]:
+    """
+    Replace the caller's skill set with `names` (already cleaned and
+    de-duplicated by the request schema). Names are matched to the shared
+    skills catalog case-insensitively, so "react" reuses the existing
+    "React" entry; a name that is not in the catalog yet is added to it.
+    """
+    employee = await get_my_employee(db, user)
+
+    by_lower: dict[str, Skill] = {}
+    if names:
+        result = await db.execute(select(Skill).where(func.lower(Skill.name).in_([n.lower() for n in names])))
+        for skill in result.scalars().all():
+            by_lower[skill.name.lower()] = skill
+
+    desired: list[Skill] = []
+    for name in names:
+        skill = by_lower.get(name.lower())
+        if skill is None:
+            skill = Skill(id=uuid.uuid4(), name=name)
+            db.add(skill)
+            by_lower[name.lower()] = skill
+        desired.append(skill)
+
+    try:
+        await db.flush()  # gives new catalog rows their ids and surfaces unique-name clashes
+
+        current_result = await db.execute(
+            select(EmployeeSkill.skill_id).where(EmployeeSkill.employee_id == employee.id)
+        )
+        current_ids = set(current_result.scalars().all())
+        desired_ids = {s.id for s in desired}
+
+        remove_ids = current_ids - desired_ids
+        if remove_ids:
+            await db.execute(
+                delete(EmployeeSkill)
+                .where(EmployeeSkill.employee_id == employee.id, EmployeeSkill.skill_id.in_(list(remove_ids)))
+                .execution_options(synchronize_session=False)
+            )
+        for skill_id in desired_ids - current_ids:
+            db.add(EmployeeSkill(employee_id=employee.id, skill_id=skill_id))
+
+        # Build the response before committing so no attribute is read from an expired object.
+        tags = [SkillTag(id=s.id, name=s.name) for s in sorted(desired, key=lambda s: s.name.lower())]
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Someone just added the same skill. Please try again.",
+        )
+
+    return tags
 
 
 async def get_my_salary(db: AsyncSession, user: User) -> MySalary:

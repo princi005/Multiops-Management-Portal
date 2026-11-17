@@ -8,6 +8,7 @@ import DashboardPage from "./features/auth/DashboardPage";
 import EmployeeListPage from "./features/hr/EmployeeListPage";
 import CeoDashboardPage from "./features/ceo/CeoDashboardPage";
 import AccountsPortalPage from "./features/accounts/AccountsPortalPage";
+import EmployeePortalPage from "./features/employee/EmployeePortalPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 function HomeRouter() {
@@ -31,6 +32,10 @@ function HomeRouter() {
 
   if (user?.roles.includes("HR")) {
     return <EmployeeListPage />;
+  }
+
+  if (user?.roles.includes("Employee") || user?.roles.includes("Manager")) {
+    return <EmployeePortalPage />;
   }
 
   return <DashboardPage />;

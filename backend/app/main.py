@@ -15,10 +15,12 @@ from app.api.routes import (
     financial_periods,
     gl_accounts,
     health,
+    issues,
     journal_entries,
     me,
     parties,
     payroll,
+    profile_changes,
     projects,
     reports,
     skills,
@@ -53,4 +55,6 @@ app.include_router(payroll.router)
 app.include_router(skills.router)
 app.include_router(projects.router)
 app.include_router(tickets.router)
+app.include_router(issues.router)
 app.include_router(me.router)
+app.include_router(profile_changes.router)

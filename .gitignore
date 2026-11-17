@@ -22,3 +22,21 @@ Thumbs.db
 
 # Logs
 *.log
+backend/storage/
+
+# Additional security and generated files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python environments and caches
+**/venv/
+**/.venv/
+**/__pycache__/
+
+# Node dependencies
+**/node_modules/
+
+# Build output
+**/dist/
+**/build/

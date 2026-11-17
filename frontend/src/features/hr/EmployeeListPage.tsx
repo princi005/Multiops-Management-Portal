@@ -13,6 +13,7 @@ import RequestStatusBadge from "../../components/RequestStatusBadge";
 import RequestFilterBar from "../../components/RequestFilterBar";
 import EmployeeEditPanel from "./EmployeeEditPanel";
 import AddEmployeePanel from "./AddEmployeePanel";
+import ProfileChangeRequestsSection from "./ProfileChangeRequestsSection";
 import type { Employee } from "../../types/employee";
 import type { RequestStatus } from "../../types/employeeRequest";
 
@@ -173,6 +174,8 @@ export default function EmployeeListPage() {
             </div>
           )}
         </section>
+
+        <ProfileChangeRequestsSection />
       </main>
 
       {editing && <EmployeeEditPanel employee={editing} onClose={() => setEditing(null)} />}
