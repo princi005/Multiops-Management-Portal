@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { BookOpen, History, Lock, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import {
@@ -16,6 +16,7 @@ import ErrorState from "../../components/ErrorState";
 import Dropdown, { DropdownItem } from "../../components/Dropdown";
 import ChartOfAccounts from "./ChartOfAccounts";
 import EmployeeRequestsPanel from "./EmployeeRequestsPanel";
+import IssuesPanel from "./IssuesPanel";
 import JournalEntryPanel from "./JournalEntryPanel";
 import JournalEntryReasonDialog from "./JournalEntryReasonDialog";
 import AuditHistoryPanel from "./AuditHistoryPanel";
@@ -92,7 +93,12 @@ export default function AccountsPortalPage() {
           ))}
         </div>
 
-        {tab === "approvals" && <EmployeeRequestsPanel />}
+        {tab === "approvals" && (
+          <div className="space-y-10">
+            <EmployeeRequestsPanel />
+            <IssuesPanel />
+          </div>
+        )}
         {tab === "payroll" && <PayrollPanel />}
 
         {tab === "coa" && (

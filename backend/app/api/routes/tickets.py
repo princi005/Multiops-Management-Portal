@@ -1,13 +1,22 @@
-import uuid
+﻿import uuid
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user
 from app.core.permissions import require_role
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.ticket import TicketCreate, TicketLogAdd, TicketLogRead, TicketRead, TicketStatusUpdate, TicketUpdate
-from app.services import ticket_service
+from app.schemas.notification import NotificationRead, RequestTicketUpdate
+from app.schemas.ticket import (
+    TicketCreate,
+    TicketLogAdd,
+    TicketLogRead,
+    TicketRead,
+    TicketStatusUpdate,
+    TicketUpdate,
+)
+from app.services import notification_service, ticket_service
 
 router = APIRouter(tags=["tickets"])
 
@@ -16,7 +25,7 @@ router = APIRouter(tags=["tickets"])
 async def list_tickets(
     project_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_role("Manager", "Employee")),
+    user: User = Depends(get_current_user),
 ):
     return await ticket_service.list_tickets(db, project_id, user)
 
@@ -41,12 +50,26 @@ async def update_ticket(
     return await ticket_service.update_ticket(db, ticket_id, payload, user)
 
 
+@router.post(
+    "/tickets/{ticket_id}/request-update",
+    response_model=NotificationRead,
+    status_code=201,
+)
+async def request_ticket_update(
+    ticket_id: uuid.UUID,
+    payload: RequestTicketUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role("Manager")),
+):
+    return await notification_service.request_ticket_update(db, ticket_id, payload, user)
+
+
 @router.patch("/tickets/{ticket_id}/status", response_model=TicketRead)
 async def update_status(
     ticket_id: uuid.UUID,
     payload: TicketStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_role("Manager", "Employee")),
+    user: User = Depends(get_current_user),
 ):
     return await ticket_service.update_status(db, ticket_id, payload, user)
 
@@ -55,7 +78,7 @@ async def update_status(
 async def list_logs(
     ticket_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_role("Manager", "Employee")),
+    user: User = Depends(get_current_user),
 ):
     return await ticket_service.list_logs(db, ticket_id, user)
 
@@ -65,6 +88,6 @@ async def add_log(
     ticket_id: uuid.UUID,
     payload: TicketLogAdd,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_role("Manager", "Employee")),
+    user: User = Depends(get_current_user),
 ):
     return await ticket_service.add_log(db, ticket_id, payload, user)

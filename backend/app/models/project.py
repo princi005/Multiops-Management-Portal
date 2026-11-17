@@ -1,3 +1,4 @@
+
 """
 Project. Visibility is strictly scoped: only the owning manager and
 assigned project_members can see a project - enforced in
@@ -25,7 +26,9 @@ class ProjectStatus(str, enum.Enum):
 class Project(Base):
     __tablename__ = "projects"
 
-    id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     version: Mapped[str | None] = mapped_column(String(20), nullable=True)
@@ -33,17 +36,46 @@ class Project(Base):
     requirements_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
     status: Mapped[ProjectStatus] = mapped_column(
-        Enum(ProjectStatus, name="project_status_enum"), default=ProjectStatus.ACTIVE, nullable=False
+        Enum(ProjectStatus, name="project_status_enum"),
+        default=ProjectStatus.ACTIVE,
+        nullable=False
     )
 
     manager_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("employees.id", ondelete="RESTRICT"), nullable=False
+        PG_UUID(as_uuid=True),
+        ForeignKey("employees.id", ondelete="RESTRICT"),
+        nullable=False
     )
+
     created_by_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+    # Soft-delete fields
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+
+    deleted_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True
+    )
 
     manager: Mapped["Employee"] = relationship(foreign_keys=[manager_id])
-    members: Mapped[list["ProjectMember"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+
+    members: Mapped[list["ProjectMember"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan"
+    )

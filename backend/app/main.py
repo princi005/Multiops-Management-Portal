@@ -1,5 +1,4 @@
-
-"""
+﻿"""
 FastAPI application entry point.
 Run with: uvicorn app.main:app --reload
 """
@@ -20,6 +19,7 @@ from app.api.routes import (
     issues,
     journal_entries,
     me,
+    notifications,
     parties,
     payroll,
     profile_changes,
@@ -28,7 +28,6 @@ from app.api.routes import (
     skills,
     tickets,
 )
-
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -59,6 +58,7 @@ app.include_router(payroll.router)
 app.include_router(skills.router)
 app.include_router(projects.router)
 app.include_router(tickets.router)
+app.include_router(notifications.router)
 app.include_router(issues.router)
 app.include_router(me.router)
 app.include_router(profile_changes.router)

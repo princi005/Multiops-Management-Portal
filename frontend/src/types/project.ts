@@ -1,4 +1,4 @@
-export type ProjectStatus = "active" | "completed" | "on_hold" | "archived";
+﻿export type ProjectStatus = "active" | "completed" | "on_hold" | "archived";
 
 export const PROJECT_STATUSES: ProjectStatus[] = ["active", "on_hold", "completed", "archived"];
 
@@ -19,6 +19,7 @@ export interface Project {
   status: ProjectStatus;
   manager_id: string;
   created_at: string;
+  deleted_at: string | null;
   members: ProjectMember[];
 }
 
@@ -53,7 +54,6 @@ export const ALL_TICKET_STATUSES: TicketStatus[] = [
   "dropped",
 ];
 
-// What a non-manager (assigned member) is allowed to set; matches the backend rule.
 export const MEMBER_TICKET_STATUSES: TicketStatus[] = [
   "not_started",
   "in_progress",

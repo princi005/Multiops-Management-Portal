@@ -27,6 +27,14 @@ class ProjectUpdate(BaseModel):
     status: ProjectStatus | None = None
 
 
+import uuid
+from datetime import date, datetime
+
+from pydantic import BaseModel, ConfigDict
+
+from app.models.project import ProjectStatus
+
+
 class ProjectMemberRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -48,6 +56,7 @@ class ProjectRead(BaseModel):
     status: ProjectStatus
     manager_id: uuid.UUID
     created_at: datetime
+    deleted_at: datetime | None = None
     members: list[ProjectMemberRead]
 
 
