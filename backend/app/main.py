@@ -1,3 +1,4 @@
+
 """
 FastAPI application entry point.
 Run with: uvicorn app.main:app --reload
@@ -10,6 +11,7 @@ from app.api.routes import (
     auth,
     dashboard,
     departments,
+    directory,
     employee_requests,
     employees,
     financial_periods,
@@ -26,6 +28,7 @@ from app.api.routes import (
     skills,
     tickets,
 )
+
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -43,6 +46,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(departments.router)
+app.include_router(directory.router)
 app.include_router(employees.router)
 app.include_router(employee_requests.router)
 app.include_router(dashboard.router)

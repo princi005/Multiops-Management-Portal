@@ -1,14 +1,21 @@
+
 import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
+
 import { supabase } from "./lib/supabaseClient";
 import { useAuthStore } from "./store/authStore";
 import { useCurrentUser } from "./hooks/useCurrentUser";
+
 import LoginPage from "./features/auth/LoginPage";
 import DashboardPage from "./features/auth/DashboardPage";
 import EmployeeListPage from "./features/hr/EmployeeListPage";
 import CeoDashboardPage from "./features/ceo/CeoDashboardPage";
 import AccountsPortalPage from "./features/accounts/AccountsPortalPage";
 import EmployeePortalPage from "./features/employee/EmployeePortalPage";
+
+import ManagerPortalPage from "./features/manager/ManagerPortalPage";
+import ManagerProfilePage from "./features/manager/ManagerProfilePage";
+
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 function HomeRouter() {
@@ -34,7 +41,11 @@ function HomeRouter() {
     return <EmployeeListPage />;
   }
 
-  if (user?.roles.includes("Employee") || user?.roles.includes("Manager")) {
+  if (user?.roles.includes("Manager")) {
+    return <ManagerPortalPage />;
+  }
+
+  if (user?.roles.includes("Employee")) {
     return <EmployeePortalPage />;
   }
 
@@ -51,9 +62,11 @@ function App() {
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
 
     return () => listener.subscription.unsubscribe();
   }, [setSession, setLoading]);
@@ -61,11 +74,21 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+
       <Route
         path="/"
         element={
           <ProtectedRoute>
             <HomeRouter />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-profile"
+        element={
+          <ProtectedRoute>
+            <ManagerProfilePage />
           </ProtectedRoute>
         }
       />
