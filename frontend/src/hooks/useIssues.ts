@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
 import type {
   CreateIssuePayload,
@@ -8,8 +8,8 @@ import type {
   RespondToIssuePayload,
 } from "../types/issue";
 
-// ---- the employee's own issues ----
-
+// Employee portal polls so Accounts responses saved in another session
+// appear without requiring a manual browser refresh.
 export function useMyIssues() {
   return useQuery({
     queryKey: ["me", "issues"],
@@ -17,11 +17,14 @@ export function useMyIssues() {
       const { data } = await apiClient.get<Issue[]>("/me/issues");
       return data;
     },
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
   });
 }
 
 export function useCreateIssue() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (payload: CreateIssuePayload) => {
       const { data } = await apiClient.post<Issue>("/me/issues", payload);
@@ -35,6 +38,7 @@ export function useCreateIssue() {
 
 export function useWithdrawIssue() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (id: string) => {
       const { data } = await apiClient.post<Issue>(`/me/issues/${id}/withdraw`);
@@ -46,8 +50,7 @@ export function useWithdrawIssue() {
   });
 }
 
-// ---- Accounts ----
-
+// Accounts
 export function useIssuesForAccounts(status: IssueStatus | "all") {
   return useQuery({
     queryKey: ["issues", status],
@@ -62,6 +65,7 @@ export function useIssuesForAccounts(status: IssueStatus | "all") {
 
 export function useRespondToIssue() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ id, status, response }: RespondToIssuePayload) => {
       const { data } = await apiClient.post<IssueForAccounts>(`/issues/${id}/respond`, {
