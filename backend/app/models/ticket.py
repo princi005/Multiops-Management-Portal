@@ -1,19 +1,9 @@
-"""
-Tickets (tasks). parent_ticket_id makes subtasks - a ticket with a
-parent is a subtask of it; self-referential, one level deep in
-practice though the schema allows more.
-
-Status transitions are enforced in services/ticket_service.py:
-Manager has full control; an assigned Employee may move between
-not_started/in_progress/completed/for_review on their own ticket, but
-only a Manager can set cancelled or dropped.
-"""
-
+﻿"""Tickets (tasks). Status transition rules are enforced by ticket_service."""
 import enum
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import CheckConstraint, Date, DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,6 +21,9 @@ class TicketStatus(str, enum.Enum):
 
 class Ticket(Base):
     __tablename__ = "tickets"
+    __table_args__ = (
+        CheckConstraint("progress_percent >= 0 AND progress_percent <= 100", name="ck_ticket_progress_percent"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -44,6 +37,10 @@ class Ticket(Base):
     status: Mapped[TicketStatus] = mapped_column(
         Enum(TicketStatus, name="ticket_status_enum"), default=TicketStatus.NOT_STARTED, nullable=False
     )
+    priority: Mapped[str] = mapped_column(String(30), default="normal", nullable=False)
+    progress_percent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    approval_status: Mapped[str] = mapped_column(String(20), default="not_requested", nullable=False)
     assigned_to_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("employees.id", ondelete="SET NULL"), nullable=True
     )

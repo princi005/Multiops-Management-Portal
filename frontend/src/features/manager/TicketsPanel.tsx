@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import toast from "react-hot-toast";
 import { ChevronDown, ChevronRight, ListChecks, Plus } from "lucide-react";
@@ -17,6 +17,8 @@ import { emptyToNull, employeeLabel, statusLabel } from "../../lib/projectFormat
 import { ALL_TICKET_STATUSES, MEMBER_TICKET_STATUSES } from "../../types/project";
 import type { DirectoryEmployee, Project, Ticket, TicketStatus } from "../../types/project";
 import TicketLogs from "./TicketLogs";
+import TicketWorkspaceViews from "./TicketWorkspaceViews";
+import TicketMetadataControls from "./TicketMetadataControls";
 
 const INPUT =
   "rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500";
@@ -281,6 +283,7 @@ function TicketRow({
                 )}
               </>
             )}
+            <TicketMetadataControls projectId={ctx.project.id} ticket={ticket} canManage={ctx.isOwner} />
             <TicketLogs projectId={ctx.project.id} ticketId={ticket.id} />
           </div>
         )}
@@ -303,78 +306,84 @@ export default function TicketsPanel({
   directory: DirectoryEmployee[];
 }) {
   const { data: tickets, isLoading, isError, refetch } = useTickets(project.id);
+  const updateStatus = useUpdateTicketStatus();
   const [filter, setFilter] = useState<TicketStatus | "all">("all");
   const [showForm, setShowForm] = useState(false);
+  const [view, setView] = useState<"board" | "list" | "details">("board");
 
   const byId = useMemo(() => new Map(directory.map((e) => [e.id, e])), [directory]);
-  // Tickets can be assigned to the manager or to project members only.
   const assignable = useMemo(() => {
     const ids = new Set([project.manager_id, ...project.members.map((m) => m.employee_id)]);
     return directory.filter((e) => ids.has(e.id));
   }, [directory, project]);
 
   const all = tickets ?? [];
-  const visible = filter === "all" ? all : all.filter((t) => t.status === filter);
-  const visibleIds = new Set(visible.map((t) => t.id));
-  const roots = visible.filter((t) => !t.parent_ticket_id || !visibleIds.has(t.parent_ticket_id));
+  const visible = filter === "all" ? all : all.filter((ticket) => ticket.status === filter);
+  const visibleIds = new Set(visible.map((ticket) => ticket.id));
+  const roots = visible.filter((ticket) => !ticket.parent_ticket_id || !visibleIds.has(ticket.parent_ticket_id));
   const childrenMap = new Map<string, Ticket[]>();
-  for (const t of visible) {
-    if (t.parent_ticket_id && visibleIds.has(t.parent_ticket_id)) {
-      const list = childrenMap.get(t.parent_ticket_id) ?? [];
-      list.push(t);
-      childrenMap.set(t.parent_ticket_id, list);
+  for (const ticket of visible) {
+    if (ticket.parent_ticket_id && visibleIds.has(ticket.parent_ticket_id)) {
+      const children = childrenMap.get(ticket.parent_ticket_id) ?? [];
+      children.push(ticket);
+      childrenMap.set(ticket.parent_ticket_id, children);
     }
   }
-  const topLevelAll = all.filter((t) => !t.parent_ticket_id);
 
   const ctx: Context = { project, isOwner, assignable, byId };
+  const editableStatuses = isOwner ? ALL_TICKET_STATUSES : MEMBER_TICKET_STATUSES;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+    <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-slate-900">Tickets ({all.length})</h3>
-        <div className="flex items-center gap-3">
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as TicketStatus | "all")}
-            className={`${INPUT} py-1.5 capitalize`}
-          >
+        <div className="flex flex-wrap items-center gap-2">
+          {(["board", "list", "details"] as const).map((mode) => (
+            <button key={mode} type="button" aria-pressed={view === mode} onClick={() => setView(mode)}
+              className={`rounded-lg px-3 py-2 text-sm font-medium ${view === mode ? "bg-violet-700 text-white" : "border border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+              {mode === "board" ? "Kanban" : mode === "list" ? "List" : "Details"}
+            </button>
+          ))}
+          <select value={filter} onChange={(event) => setFilter(event.target.value as TicketStatus | "all")}
+            aria-label="Filter detailed ticket view by status"
+            className={`${INPUT} py-1.5 capitalize`}>
             <option value="all">All statuses</option>
-            {ALL_TICKET_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {statusLabel(s)}
-              </option>
-            ))}
+            {ALL_TICKET_STATUSES.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
           </select>
           {isOwner && !showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-violet-600 text-white hover:bg-violet-700"
-            >
-              <Plus className="w-4 h-4" />
-              New ticket
+            <button type="button" onClick={() => setShowForm(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700">
+              <Plus className="h-4 w-4" />New ticket
             </button>
           )}
         </div>
       </div>
 
-      {showForm && <CreateTicketForm ctx={ctx} topLevel={topLevelAll} onDone={() => setShowForm(false)} />}
+      {showForm && <CreateTicketForm ctx={ctx} topLevel={all.filter((ticket) => !ticket.parent_ticket_id)} onDone={() => setShowForm(false)} />}
 
-      <div className="mt-4 space-y-2">
-        {isLoading ? (
-          <LoadingState label="Loading tickets..." />
-        ) : isError ? (
-          <ErrorState message="Could not load tickets." onRetry={() => refetch()} />
-        ) : roots.length === 0 ? (
-          <EmptyState
-            icon={ListChecks}
-            title={all.length === 0 ? "No tickets yet" : "No tickets match this filter"}
-            description={isOwner && all.length === 0 ? "Create the first ticket to start assigning work." : undefined}
-          />
-        ) : (
-          roots.map((t) => <TicketRow key={t.id} ticket={t} depth={0} ctx={ctx} childrenMap={childrenMap} />)
-        )}
-      </div>
+      {isLoading ? <LoadingState label="Loading tickets…" /> : isError ? (
+        <ErrorState message="Could not load tickets." onRetry={() => refetch()} />
+      ) : view !== "details" ? (
+        <TicketWorkspaceViews
+          tickets={visible}
+          directory={directory}
+          editableStatuses={editableStatuses}
+          onStatusChange={(ticketId, status) => {
+            updateStatus.mutate({ projectId: project.id, ticketId, status }); 
+          }}
+        />
+      ) : roots.length === 0 ? (
+        <EmptyState icon={ListChecks} title={all.length === 0 ? "No tickets yet" : "No tickets match this filter"}
+          description={isOwner && all.length === 0 ? "Create the first ticket to start assigning work." : undefined} />
+      ) : (
+        <div className="space-y-2">
+          {roots.map((ticket) => <TicketRow key={ticket.id} ticket={ticket} depth={0} ctx={ctx} childrenMap={childrenMap} />)}
+        </div>
+      )}
     </div>
   );
 }
+
+
+
+

@@ -1,17 +1,15 @@
-﻿import { useQueries } from "@tanstack/react-query";
+﻿import { useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { useUpdateTicketStatus } from "../../hooks/useTickets";
 import { useProjects } from "../../hooks/useProjects";
 import { apiClient } from "../../lib/apiClient";
 import type { Project, Ticket, TicketStatus } from "../../types/project";
+import { MEMBER_TICKET_STATUSES } from "../../types/project";
 import LoadingState from "../../components/LoadingState";
 import ErrorState from "../../components/ErrorState";
-
-const EMPLOYEE_STATUSES: TicketStatus[] = [
-  "not_started",
-  "in_progress",
-  "for_review",
-  "completed",
-];
+import TicketWorkspaceViews from "../manager/TicketWorkspaceViews";
+import EmployeeTicketCreatePanel from "./EmployeeTicketCreatePanel";
 
 export default function EmployeeProjectsSection({
   employeeId,
@@ -35,16 +33,15 @@ export default function EmployeeProjectsSection({
     })),
   });
 
-  if (projects.isLoading) return <LoadingState label="Loading your projects..." />;
+  if (projects.isLoading) return <LoadingState label="Loading your projects…" />;
   if (projects.isError) {
     return <ErrorState message="Could not load your projects." onRetry={() => projects.refetch()} />;
   }
-
-  if (onlyAssignedProjects && ticketQueries.some((query) => query.isLoading)) {
-    return <LoadingState label="Finding projects with tickets assigned to you..." />;
+  if (ticketQueries.some((query) => query.isLoading)) {
+    return <LoadingState label="Loading project tickets…" />;
   }
 
-  const visibleProjects = projectList.filter((project, index) => {
+  const visibleProjects = projectList.filter((_, index) => {
     if (!onlyAssignedProjects) return true;
     return (ticketQueries[index]?.data ?? []).some(
       (ticket) => ticket.assigned_to_id === employeeId,
@@ -53,7 +50,10 @@ export default function EmployeeProjectsSection({
 
   if (visibleProjects.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">
+      <div
+        className="rounded-2xl border p-6 text-sm text-slate-600 dark:text-slate-300"
+        style={{ backgroundColor: "var(--mo-card)", borderColor: "var(--mo-border)" }}
+      >
         {onlyAssignedProjects
           ? "No projects have tickets assigned to you yet."
           : "You have not been added to a project yet. Projects will appear here when your manager adds you."}
@@ -63,20 +63,21 @@ export default function EmployeeProjectsSection({
 
   return (
     <section>
-      <h2 className="mb-4 text-lg font-semibold text-slate-900">My Projects</h2>
-      <div className="space-y-4">
+      <h2 className="mb-4 text-lg font-extrabold text-slate-900 dark:text-white">My Tickets</h2>
+      <div className="space-y-5">
         {visibleProjects.map((project) => {
-          const projectIndex = projectList.findIndex((item) => item.id === project.id);
-          const assignedTickets = (ticketQueries[projectIndex]?.data ?? []).filter(
+          const index = projectList.findIndex((item) => item.id === project.id);
+          const projectTickets = ticketQueries[index]?.data ?? [];
+          const tickets = projectTickets.filter(
             (ticket) => ticket.assigned_to_id === employeeId,
           );
 
           return (
-            <ProjectCard
+            <ProjectTicketCard
               key={project.id}
               project={project}
-              tickets={assignedTickets}
-              updatePending={updateStatus.isPending}
+              employeeId={employeeId}
+              tickets={tickets}
               onStatusChange={(ticketId, status) =>
                 updateStatus.mutate({ projectId: project.id, ticketId, status })
               }
@@ -88,61 +89,65 @@ export default function EmployeeProjectsSection({
   );
 }
 
-function ProjectCard({
+function ProjectTicketCard({
   project,
+  employeeId,
   tickets,
-  updatePending,
   onStatusChange,
 }: {
   project: Project;
+  employeeId: string;
   tickets: Ticket[];
-  updatePending: boolean;
   onStatusChange: (ticketId: string, status: TicketStatus) => void;
 }) {
+  const [creating, setCreating] = useState(false);
+
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold text-slate-900">{project.name}</h3>
-        <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium capitalize text-sky-700">
-          {project.status.replace(/_/g, " ")}
-        </span>
-      </div>
+    <article
+      className="space-y-4 rounded-2xl border p-5 shadow-sm sm:p-6"
+      style={{ backgroundColor: "var(--mo-surface)", borderColor: "var(--mo-border)" }}
+    >
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="font-bold text-slate-900 dark:text-white">{project.name}</h3>
+          {project.description && (
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{project.description}</p>
+          )}
+        </div>
 
-      {project.description && <p className="mt-2 text-sm text-slate-600">{project.description}</p>}
-      {project.technology && <p className="mt-2 text-xs text-slate-500">Technology: {project.technology}</p>}
-
-      {tickets.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">No tickets assigned to you in this project.</p>
-      ) : (
-        <ul className="mt-3 space-y-2">
-          {tickets.map((ticket) => (
-            <li
-              key={ticket.id}
-              className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between"
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold capitalize text-sky-800 dark:bg-sky-400/15 dark:text-sky-200">
+            {project.status.replace(/_/g, " ")}
+          </span>
+          {!creating && (
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-violet-700 px-3.5 py-2 text-sm font-bold text-white hover:bg-violet-800"
             >
-              <div>
-                <p className="text-sm font-medium text-slate-900">{ticket.title}</p>
-                {ticket.description && (
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">{ticket.description}</p>
-                )}
-              </div>
-              <select
-                aria-label={`Status for ${ticket.title}`}
-                value={ticket.status}
-                disabled={updatePending}
-                onChange={(event) => onStatusChange(ticket.id, event.target.value as TicketStatus)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm capitalize"
-              >
-                {EMPLOYEE_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {status.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </select>
-            </li>
-          ))}
-        </ul>
+              <Plus className="h-4 w-4" />
+              New ticket
+            </button>
+          )}
+        </div>
+      </header>
+
+      {creating && (
+        <EmployeeTicketCreatePanel
+          projectId={project.id}
+          employeeId={employeeId}
+          onCreated={() => setCreating(false)}
+          onCancel={() => setCreating(false)}
+        />
       )}
+
+      <TicketWorkspaceViews
+        tickets={tickets}
+        directory={[{ id: employeeId, full_name: "You", email: "" }]}
+        editableStatuses={MEMBER_TICKET_STATUSES}
+        onStatusChange={onStatusChange}
+      />
     </article>
   );
 }
+

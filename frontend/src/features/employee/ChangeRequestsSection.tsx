@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import toast from "react-hot-toast";
 import { ClipboardList, Plus } from "lucide-react";
 import {
@@ -20,14 +20,19 @@ export default function ChangeRequestsSection() {
 
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
+  const [supportDocumentName, setSupportDocumentName] = useState("");
 
   function closeForm() {
     setOpen(false);
     setText("");
+    setSupportDocumentName("");
   }
 
   function handleSubmit() {
-    if (text.trim().length < 5) {
+    if (!supportDocumentName) {
+      toast.error("Select the supporting document for this preview request.");
+      return;
+    }    if (text.trim().length < 5) {
       toast.error("Please describe what you want changed (at least 5 characters).");
       return;
     }
@@ -54,33 +59,43 @@ export default function ChangeRequestsSection() {
   return (
     <section>
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-lg font-semibold text-slate-900">Profile Change Requests</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Legal-name correction request</h2>
         {!open && (
           <button
             onClick={() => setOpen(true)}
             className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-sky-700"
           >
             <Plus className="w-4 h-4" />
-            Request a change
+            Request a legal-name correction
           </button>
         )}
       </div>
       <p className="text-sm text-slate-500 mb-4">
-        Your profile details are read-only. To change anything (name, phone, address and so on), describe it below and
-        HR will update it for you.
+        Enter your corrected legal name and select the supporting affidavit or document. The file selection is preview-only; the current request API does not upload attachments.
       </p>
 
       {open && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-4">
           <label className="block text-xs uppercase tracking-wide text-slate-500 font-medium mb-1">
-            What would you like to change?
+            Corrected legal name
+          </label>
+
+
+          <label className="mb-3 block text-sm font-medium text-slate-700">
+            Supporting affidavit or document · preview only
+            <input type="file" accept="image/*,.pdf"
+              onChange={(event) => setSupportDocumentName(event.target.files?.[0]?.name ?? "")}
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <span className="mt-1 block text-xs text-slate-500">
+              {supportDocumentName || "No supporting document selected"}
+            </span>
           </label>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={1000}
             rows={4}
-            placeholder="For example: please update my phone number to +91 98765 43210."
+            placeholder="Enter your full legal name as shown on your supporting document."
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
           <p className="mt-1 text-xs text-slate-400">{text.length} / 1000</p>
@@ -90,7 +105,7 @@ export default function ChangeRequestsSection() {
               disabled={submit.isPending}
               className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50"
             >
-              {submit.isPending ? "Sending..." : "Send request"}
+              {submit.isPending ? "Sending..." : "Send correction request"}
             </button>
             <button
               onClick={closeForm}
@@ -110,8 +125,8 @@ export default function ChangeRequestsSection() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
           <EmptyState
             icon={ClipboardList}
-            title="No change requests yet"
-            description="Requests you send to HR, and their decisions, appear here."
+            title="No legal-name correction requests yet"
+            description="Your legal-name correction requests and HR decisions will appear here."
           />
         </div>
       )}
@@ -159,3 +174,10 @@ export default function ChangeRequestsSection() {
     </section>
   );
 }
+
+
+
+
+
+
+

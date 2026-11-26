@@ -68,6 +68,10 @@ export interface Ticket {
   title: string;
   description: string | null;
   status: TicketStatus;
+  priority: string;
+  progress_percent: number;
+  due_date: string | null;
+  approval_status: "not_requested" | "pending" | "approved" | "rejected";
   assigned_to_id: string | null;
   created_by_id: string;
   created_at: string;
@@ -79,12 +83,17 @@ export interface TicketCreatePayload {
   description: string | null;
   parent_ticket_id: string | null;
   assigned_to_id: string | null;
+  priority?: string;
+  due_date?: string | null;
 }
 
 export interface TicketUpdatePayload {
   title?: string;
   description?: string | null;
   assigned_to_id?: string | null;
+  priority?: string;
+  progress_percent?: number;
+  due_date?: string | null;
 }
 
 export interface TicketLog {
@@ -104,3 +113,5 @@ export interface DirectoryEmployee {
   designation: string | null;
   department_name: string | null;
 }
+
+

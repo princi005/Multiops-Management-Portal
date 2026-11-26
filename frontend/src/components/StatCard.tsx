@@ -1,9 +1,9 @@
-import type { LucideIcon } from "lucide-react";
+﻿import type { LucideIcon } from "lucide-react";
 
 const COLOR_MAP = {
-  indigo: "bg-indigo-50 text-indigo-600",
-  emerald: "bg-emerald-50 text-emerald-600",
-  amber: "bg-amber-50 text-amber-600",
+  indigo: "bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-200",
+  emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200",
+  amber: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-200",
 } as const;
 
 export default function StatCard({
@@ -18,14 +18,21 @@ export default function StatCard({
   color?: keyof typeof COLOR_MAP;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex items-center gap-4">
-      <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${COLOR_MAP[color]}`}>
-        <Icon className="w-5 h-5" />
+    <section
+      className="mo-card flex items-center gap-4 rounded-2xl p-5"
+      style={{
+        backgroundColor: "var(--mo-card)",
+        borderColor: "var(--mo-border-glass)",
+        boxShadow: "var(--mo-shadow)",
+      }}
+    >
+      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${COLOR_MAP[color]}`}>
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
+        <p className="mt-1 text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white">{value}</p>
       </div>
-      <div>
-        <p className="text-sm text-slate-500">{label}</p>
-        <p className="text-2xl font-bold text-slate-900">{value}</p>
-      </div>
-    </div>
+    </section>
   );
 }

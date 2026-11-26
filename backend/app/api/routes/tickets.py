@@ -4,11 +4,14 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
+from app.api.tenant import get_current_organization
 from app.core.permissions import require_role
 from app.db.session import get_db
+from app.models.organization import Organization, OrganizationMember
 from app.models.user import User
 from app.schemas.notification import NotificationRead, RequestTicketUpdate
 from app.schemas.ticket import (
+    TicketApprovalUpdate,
     TicketCreate,
     TicketLogAdd,
     TicketLogRead,
@@ -35,9 +38,11 @@ async def create_ticket(
     project_id: uuid.UUID,
     payload: TicketCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_role("Manager")),
+    user: User = Depends(get_current_user),
+    active: tuple[Organization, OrganizationMember] = Depends(get_current_organization),
 ):
-    return await ticket_service.create_ticket(db, project_id, payload, user)
+    organization, _membership = active
+    return await ticket_service.create_ticket(db, project_id, payload, user, organization.id)
 
 
 @router.patch("/tickets/{ticket_id}", response_model=TicketRead)
@@ -46,8 +51,10 @@ async def update_ticket(
     payload: TicketUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_role("Manager")),
+    active: tuple[Organization, OrganizationMember] = Depends(get_current_organization),
 ):
-    return await ticket_service.update_ticket(db, ticket_id, payload, user)
+    organization, _membership = active
+    return await ticket_service.update_ticket(db, ticket_id, payload, user, organization.id)
 
 
 @router.post(
@@ -91,3 +98,13 @@ async def add_log(
     user: User = Depends(get_current_user),
 ):
     return await ticket_service.add_log(db, ticket_id, payload, user)
+
+
+@router.patch("/tickets/{ticket_id}/approval", response_model=TicketRead)
+async def update_ticket_approval(
+    ticket_id: uuid.UUID,
+    payload: TicketApprovalUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role("Manager")),
+):
+    return await ticket_service.set_approval_status(db, ticket_id, payload, user)

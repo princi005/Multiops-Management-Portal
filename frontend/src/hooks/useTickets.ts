@@ -101,3 +101,27 @@ export function useAddTicketLog() {
     },
   });
 }
+
+export function useSetTicketApproval() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      ticketId,
+      status,
+      note,
+    }: {
+      projectId: string;
+      ticketId: string;
+      status: "not_requested" | "pending" | "approved" | "rejected";
+      note?: string;
+    }) => {
+      const { data } = await apiClient.patch<Ticket>(`/tickets/${ticketId}/approval`, { status, note });
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["tickets", vars.projectId] });
+      queryClient.invalidateQueries({ queryKey: ["ticket-logs", vars.ticketId] });
+    },
+  });
+}

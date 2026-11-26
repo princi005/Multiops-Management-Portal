@@ -1,28 +1,16 @@
 ﻿import { useState } from "react";
-import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import { Eye, EyeOff, Wallet } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useMyProfile, useMySalary } from "../../hooks/useMe";
 import PortalHeader from "../../components/PortalHeader";
+import ProfileEditorPanel from "./ProfileEditorPanel";
+import SalaryDocumentsPanel from "./SalaryDocumentsPanel";
 import LoadingState from "../../components/LoadingState";
 import ErrorState from "../../components/ErrorState";
 import EmptyState from "../../components/EmptyState";
-import ResumeSection from "./ResumeSection";
-import SkillsSection from "./SkillsSection";
-import ChangeRequestsSection from "./ChangeRequestsSection";
-import IssuesSection from "./IssuesSection";
-import type { MyProfile, MySalary } from "../../types/me";
 
-const STATUS_STYLES: Record<string, string> = {
-  active: "bg-emerald-50 text-emerald-700",
-  on_leave: "bg-amber-50 text-amber-700",
-  inactive: "bg-slate-100 text-slate-600",
-  terminated: "bg-red-50 text-red-700",
-  available: "bg-emerald-50 text-emerald-700",
-  partially_available: "bg-amber-50 text-amber-700",
-  unavailable: "bg-red-50 text-red-700",
-};
+import type { MySalary } from "../../types/me";
 
 function formatMoney(value: number): string {
   return new Intl.NumberFormat("en-IN", {
@@ -48,34 +36,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     <div>
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
       <div className="mt-1 text-sm text-slate-900">{children}</div>
-    </div>
-  );
-}
-
-function StatusPill({ value }: { value: string }) {
-  return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${STATUS_STYLES[value] ?? "bg-slate-100 text-slate-600"}`}>
-      {value.replace(/_/g, " ")}
-    </span>
-  );
-}
-
-function ProfileCard({ profile }: { profile: MyProfile }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Name">{profile.full_name ?? "-"}</Field>
-        <Field label="Employee code">{profile.employee_code}</Field>
-        <Field label="Email">{profile.email}</Field>
-        <Field label="Designation">{profile.designation ?? "-"}</Field>
-        <Field label="Department">{profile.department_name ?? "-"}</Field>
-        <Field label="Phone">{profile.phone ?? "-"}</Field>
-        <Field label="Date of joining">{formatDate(profile.date_of_joining)}</Field>
-        <Field label="Employment status"><StatusPill value={profile.employment_status} /></Field>
-        <Field label="Availability"><StatusPill value={profile.availability_status} /></Field>
-        <Field label="Roles">{profile.roles.join(", ") || "-"}</Field>
-      </div>
-      <SkillsSection skills={profile.skills} />
     </div>
   );
 }
@@ -159,67 +119,41 @@ export default function EmployeePortalPage() {
     <div className="min-h-screen bg-slate-50">
       <PortalHeader title="My Profile" subtitle="Personal details" email={user?.email} accent="sky" />
       <main className="mx-auto max-w-5xl space-y-10 p-8">
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {user?.roles.includes("Manager") ? (
-            <>
-              <Link to="/my-projects" className="rounded-xl border border-violet-200 bg-white p-4 font-medium text-violet-700 hover:bg-violet-50">
-                My Projects
-                <span className="mt-1 block text-sm font-normal text-slate-500">Tickets assigned to you</span>
-              </Link>
-              <Link to="/workspace/manager" className="rounded-xl border border-violet-200 bg-white p-4 font-medium text-violet-700 hover:bg-violet-50">
-                Manager Workspace
-                <span className="mt-1 block text-sm font-normal text-slate-500">Create and manage projects</span>
-              </Link>
-            </>
-          ) : user?.roles.includes("CEO") ? (
-            <Link to="/workspace/ceo" className="rounded-xl border border-violet-200 bg-white p-4 font-medium text-violet-700 hover:bg-violet-50">
-              CEO Workspace
-            </Link>
-          ) : user?.roles.includes("HR") ? (
-            <Link to="/workspace/hr" className="rounded-xl border border-violet-200 bg-white p-4 font-medium text-violet-700 hover:bg-violet-50">
-              HR Workspace
-              <span className="mt-1 block text-sm font-normal text-slate-500">Employee onboarding and HR tools</span>
-            </Link>
-          ) : user?.roles.includes("Accounts") ? (
-            <>
-              <Link to="/my-projects" className="rounded-xl border border-violet-200 bg-white p-4 font-medium text-violet-700 hover:bg-violet-50">
-                My Projects
-              </Link>
-              <Link to="/workspace" className="rounded-xl border border-violet-200 bg-white p-4 font-medium text-violet-700 hover:bg-violet-50">
-                My Workspace
-              </Link>
-            </>
-          ) : (
-            <Link to="/my-projects" className="rounded-xl border border-sky-200 bg-white p-4 font-medium text-sky-700 hover:bg-sky-50">
-              My Projects
-            </Link>
-          )}
-        </section>
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">Profile</h2>
-          {profile.isLoading && <LoadingState label="Loading your profile..." />}
-          {profile.isError && <ErrorState message="Failed to load your profile." onRetry={() => profile.refetch()} />}
-          {profile.data && <ProfileCard profile={profile.data} />}
-        </section>
+        <ProfileEditorPanel
+          profile={profile.data}
+          salaryContent={
+            <section className="mt-8 border-t pt-6" style={{ borderColor: "var(--mo-border)" }}>
+              <h3 className="mb-4 text-lg font-bold">Salary & payslips</h3>
+              <SalaryDocumentsPanel />
+              {salary.isLoading && <LoadingState label="Loading your salary details..." />}
+              {salary.isError && <ErrorState message="Failed to load your salary details." onRetry={() => salary.refetch()} />}
+              {salary.data === null && (
+                <div className="rounded-xl border p-5" style={{ backgroundColor: "var(--mo-surface)", borderColor: "var(--mo-border)" }}>
+                  <EmptyState icon={Wallet} title="Salary details not set up yet" description="Accounts will add your payroll profile. It will appear here once it is ready." />
+                </div>
+              )}
+              {salary.data && <SalaryCard salary={salary.data} />}
+            </section>
+          }
+        />
 
-        <ResumeSection />
-        <ChangeRequestsSection />
 
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">My Salary</h2>
-          {salary.isLoading && <LoadingState label="Loading your salary details..." />}
-          {salary.isError && <ErrorState message="Failed to load your salary details." onRetry={() => salary.refetch()} />}
-          {salary.data === null && (
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-              <EmptyState icon={Wallet} title="Salary details not set up yet" description="Accounts will add your payroll profile. It will appear here once it is ready." />
-            </div>
-          )}
-          {salary.data && <SalaryCard salary={salary.data} />}
-        </section>
-
-        <IssuesSection />
       </main>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

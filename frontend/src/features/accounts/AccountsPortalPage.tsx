@@ -51,7 +51,12 @@ export default function AccountsPortalPage() {
   const deleteEntry = useDeleteJournalEntry();
   const restoreEntry = useRestoreJournalEntry();
 
-  const [tab, setTab] = useState<Tab>("approvals");
+  const [tab, setTab] = useState<Tab>(() => {
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    return TABS.some(({ id }) => id === requestedTab)
+      ? (requestedTab as Tab)
+      : "approvals";
+  });
   const [showNewEntry, setShowNewEntry] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [historyEntry, setHistoryEntry] = useState<JournalEntry | null>(null);
@@ -273,3 +278,4 @@ export default function AccountsPortalPage() {
     </div>
   );
 }
+

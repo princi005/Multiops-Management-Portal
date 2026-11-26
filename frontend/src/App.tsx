@@ -1,37 +1,51 @@
-﻿import { useEffect } from "react";
-import { Route, Routes } from "react-router-dom";
-
+﻿import { lazy, Suspense, useEffect } from "react";
+import { Outlet, Route, Routes } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 import { useAuthStore } from "./store/authStore";
 import { useCurrentUser } from "./hooks/useCurrentUser";
-
-import LoginPage from "./features/auth/LoginPage";
-import DashboardPage from "./features/auth/DashboardPage";
-import WorkspaceChooserPage from "./features/auth/WorkspaceChooserPage";
-import RoleWorkspacePage from "./features/auth/RoleWorkspacePage";
-import EmployeeListPage from "./features/hr/EmployeeListPage";
-import CeoDashboardPage from "./features/ceo/CeoDashboardPage";
-import AccountsPortalPage from "./features/accounts/AccountsPortalPage";
-import EmployeePortalPage from "./features/employee/EmployeePortalPage";
-import EmployeeProjectsPage from "./features/employee/EmployeeProjectsPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import PortalSidebar from "./components/PortalSidebar";
+
+const LoginPage = lazy(() => import("./features/auth/LoginPage"));
+const DashboardPage = lazy(() => import("./features/auth/DashboardPage"));
+const WorkspaceChooserPage = lazy(() => import("./features/auth/WorkspaceChooserPage"));
+const RoleWorkspacePage = lazy(() => import("./features/auth/RoleWorkspacePage"));
+const EmployeeListPage = lazy(() => import("./features/hr/EmployeeListPage"));
+const CeoDashboardPage = lazy(() => import("./features/ceo/CeoDashboardPage"));
+const AccountsPortalPage = lazy(() => import("./features/accounts/AccountsPortalPage"));
+const EmployeePortalPage = lazy(() => import("./features/employee/EmployeePortalPage"));
+const EmployeeProjectsPage = lazy(() => import("./features/employee/EmployeeProjectsPage"));
+const OrganizationAdminPage = lazy(() => import("./features/admin/OrganizationAdminPage"));
+const SuperAdminPage = lazy(() => import("./features/admin/SuperAdminPage"));
+const WorkspacePlaceholderPage = lazy(() => import("./features/workspace/WorkspacePlaceholderPage"));
+
+function PageLoading() {
+  return (
+    <div className="flex min-h-screen items-center justify-center text-sm text-slate-600" role="status">
+      Loading MultiOps…
+    </div>
+  );
+}
 
 function HomeRouter() {
   const { data: user, isLoading } = useCurrentUser();
 
-  if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center text-gray-600">Loading...</div>;
-  }
-
-  const roles = user?.roles ?? [];
-  const hasKnownPortal = ["CEO", "Accounts", "HR", "Manager", "Employee"].some((role) =>
-    roles.includes(role),
-  );
-
-  // All portal roles land on their own profile first.
-  if (hasKnownPortal) return <EmployeePortalPage />;
-
+  if (isLoading) return <PageLoading />;
+  if (user?.is_platform_admin) return <SuperAdminPage />;
+  if (user?.organization_roles?.includes("org_admin")) return <OrganizationAdminPage />;
+  if ((user?.roles ?? []).length) return <EmployeePortalPage />;
   return <DashboardPage />;
+}
+
+function AuthenticatedWorkspace() {
+  return (
+    <div className="min-h-screen md:flex">
+      <PortalSidebar />
+      <div className="min-w-0 flex-1">
+        <Outlet />
+      </div>
+    </div>
+  );
 }
 
 function App() {
@@ -52,83 +66,32 @@ function App() {
   }, [setSession, setLoading]);
 
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
+    <Suspense fallback={<PageLoading />}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
 
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <HomeRouter />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/my-profile"
-        element={
-          <ProtectedRoute>
-            <EmployeePortalPage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Kept for Employee, Manager, and Accounts; hidden for HR and CEO in the menu. */}
-      <Route
-        path="/my-projects"
-        element={
-          <ProtectedRoute>
-            <EmployeeProjectsPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/workspace"
-        element={
-          <ProtectedRoute>
-            <WorkspaceChooserPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/workspace/:workspace"
-        element={
-          <ProtectedRoute>
-            <RoleWorkspacePage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Retain direct HR onboarding route for existing navigation. */}
-      <Route
-        path="/hr"
-        element={
-          <ProtectedRoute>
-            <EmployeeListPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/ceo"
-        element={
-          <ProtectedRoute>
-            <CeoDashboardPage />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/accounts"
-        element={
-          <ProtectedRoute>
-            <AccountsPortalPage />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedWorkspace />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<HomeRouter />} />
+          <Route path="my-profile" element={<EmployeePortalPage />} />
+          <Route path="my-projects" element={<EmployeeProjectsPage />} />
+          <Route path="workspace" element={<WorkspaceChooserPage />} />
+          <Route path="workspace/:workspace" element={<RoleWorkspacePage />} />
+          <Route path="workspace/modules/:moduleId" element={<WorkspacePlaceholderPage />} />
+          <Route path="hr" element={<EmployeeListPage />} />
+          <Route path="ceo" element={<CeoDashboardPage />} />
+          <Route path="accounts" element={<AccountsPortalPage />} />
+          <Route path="admin/organization" element={<OrganizationAdminPage />} />
+          <Route path="admin/platform" element={<SuperAdminPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 

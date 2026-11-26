@@ -1,4 +1,4 @@
-"""
+﻿"""
 Ticket status rules:
   - Manager: any status, including cancelled/dropped, and may also move
     a ticket OUT of cancelled/dropped (reopen it).
@@ -18,8 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.ticket import Ticket, TicketStatus
 from app.models.ticket_log import TicketLog
+from app.models.organization import OrganizationSettings
 from app.models.user import User
-from app.schemas.ticket import TicketCreate, TicketLogAdd, TicketStatusUpdate, TicketUpdate
+from app.schemas.ticket import TicketApprovalUpdate, TicketCreate, TicketLogAdd, TicketStatusUpdate, TicketUpdate
 from app.services.project_service import ensure_project_access, load_project, require_owning_manager
 
 MANAGER_ONLY_STATUSES = {TicketStatus.CANCELLED, TicketStatus.DROPPED}
@@ -49,6 +50,18 @@ def _validate_assignee(project, assigned_to_id: uuid.UUID | None) -> None:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assigned employee is not a member of this project.")
 
 
+async def _validate_priority(db: AsyncSession, organization_id: uuid.UUID, priority: str) -> str:
+    settings = await db.get(OrganizationSettings, organization_id)
+    config = settings.config if settings else {}
+    configured = config.get("priorities") or ["low", "normal", "high", "urgent"]
+    match = next((item for item in configured if item.casefold() == priority.strip().casefold()), None)
+    if match is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Priority is not enabled for this organization.",
+        )
+    return match
+
 async def list_tickets(db: AsyncSession, project_id: uuid.UUID, user: User) -> list[Ticket]:
     project = await load_project(db, project_id)
     await ensure_project_access(db, project, user)
@@ -56,27 +69,49 @@ async def list_tickets(db: AsyncSession, project_id: uuid.UUID, user: User) -> l
     return list(result.scalars().all())
 
 
-async def create_ticket(db: AsyncSession, project_id: uuid.UUID, payload: TicketCreate, user: User) -> Ticket:
+async def create_ticket(db: AsyncSession, project_id: uuid.UUID, payload: TicketCreate, user: User, organization_id: uuid.UUID) -> Ticket:
     project = await load_project(db, project_id)
-    await require_owning_manager(db, project, user)
-    _validate_assignee(project, payload.assigned_to_id)
+    employee = await ensure_project_access(db, project, user)
+    is_manager = project.manager_id == employee.id
+
+    assigned_to_id = payload.assigned_to_id
+    if is_manager:
+        _validate_assignee(project, assigned_to_id)
+    else:
+        if assigned_to_id not in (None, employee.id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Employees can only self-assign tickets.",
+            )
+        assigned_to_id = employee.id
 
     ticket = Ticket(
         id=uuid.uuid4(),
         project_id=project_id,
         parent_ticket_id=payload.parent_ticket_id,
-        title=payload.title,
+        title=payload.title.strip(),
         description=payload.description,
-        assigned_to_id=payload.assigned_to_id,
+        priority=await _validate_priority(db, organization_id, payload.priority),
+        due_date=payload.due_date,
+        assigned_to_id=assigned_to_id,
         created_by_id=user.id,
+        approval_status="not_requested" if is_manager else "pending",
     )
     db.add(ticket)
+    if not is_manager:
+        db.add(TicketLog(
+            id=uuid.uuid4(),
+            ticket_id=ticket.id,
+            note="Ticket submitted for manager approval.",
+            status_from=None,
+            status_to="approval_pending",
+            logged_by_id=user.id,
+        ))
     await db.commit()
     await db.refresh(ticket)
     return ticket
 
-
-async def update_ticket(db: AsyncSession, ticket_id: uuid.UUID, payload: TicketUpdate, user: User) -> Ticket:
+async def update_ticket(db: AsyncSession, ticket_id: uuid.UUID, payload: TicketUpdate, user: User, organization_id: uuid.UUID) -> Ticket:
     ticket = await _get_ticket(db, ticket_id)
     project = await load_project(db, ticket.project_id)
     await require_owning_manager(db, project, user)
@@ -84,6 +119,8 @@ async def update_ticket(db: AsyncSession, ticket_id: uuid.UUID, payload: TicketU
     update_data = payload.model_dump(exclude_unset=True)
     if "assigned_to_id" in update_data:
         _validate_assignee(project, update_data["assigned_to_id"])
+    if update_data.get("priority") is not None:
+        update_data["priority"] = await _validate_priority(db, organization_id, update_data["priority"])
 
     for field, value in update_data.items():
         setattr(ticket, field, value)
@@ -148,3 +185,34 @@ async def list_logs(db: AsyncSession, ticket_id: uuid.UUID, user: User) -> list[
     await ensure_project_access(db, project, user)
     result = await db.execute(select(TicketLog).where(TicketLog.ticket_id == ticket_id).order_by(TicketLog.created_at.desc()))
     return list(result.scalars().all())
+
+
+async def set_approval_status(
+    db: AsyncSession,
+    ticket_id: uuid.UUID,
+    payload: TicketApprovalUpdate,
+    user: User,
+) -> Ticket:
+    ticket = await _get_ticket(db, ticket_id)
+    project = await load_project(db, ticket.project_id)
+    await require_owning_manager(db, project, user)
+
+    previous = ticket.approval_status
+    ticket.approval_status = payload.status
+    note = payload.note.strip() if payload.note else ""
+    message = f"Approval changed from {previous} to {payload.status}."
+    if note:
+        message = f"{message} Note: {note}"
+
+    db.add(TicketLog(
+        id=uuid.uuid4(),
+        ticket_id=ticket.id,
+        note=message,
+        status_from=f"approval:{previous}",
+        status_to=f"approval:{payload.status}",
+        logged_by_id=user.id,
+    ))
+    await db.commit()
+    await db.refresh(ticket)
+    return ticket
+

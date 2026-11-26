@@ -1,8 +1,207 @@
+﻿@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
-  --color-obsidian: #0B0F19;
-  --color-slate: #161B26;
-  --color-brand: #1A73E8;
-  --color-cyan: #00F0FF;
+  --font-sans: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+  --color-obsidian: #0b1020;
+  --color-slate: #182238;
+  --color-brand: #5b21b6;
+  --color-brand-soft: #f1edff;
+  --color-cyan: #0284c7;
+  --color-canvas: #f3f5fa;
+  --color-ink: #0b1120;
+  --color-muted: #64748b;
+  --color-line: #e4e8f0;
+  --radius-card: 1rem;
+  --shadow-card: 0 16px 36px -10px rgba(15, 23, 42, 0.10);
 }
+
+:root {
+  color-scheme: light;
+  font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+
+  --mo-violet: #5b21b6;
+  --mo-violet-soft: #7c3aed;
+  --mo-violet-tint: rgba(124, 58, 237, 0.12);
+  --mo-magenta: #be185d;
+  --mo-magenta-soft: #ec4899;
+  --mo-blue-royal: #2563eb;
+  --mo-blue-sky: #0284c7;
+  --mo-blue-cyan: #38bdf8;
+  --mo-green: #059669;
+  --mo-orange: #d97706;
+
+  --mo-page: #f3f5fa;
+  --mo-ambient-1: rgba(124, 58, 237, 0.08);
+  --mo-ambient-2: rgba(56, 189, 248, 0.10);
+  --mo-ambient-3: rgba(236, 72, 153, 0.07);
+  --mo-surface: rgba(255, 255, 255, 0.75);
+  --mo-card: rgba(255, 255, 255, 0.85);
+  --mo-card-hover: rgba(255, 255, 255, 0.98);
+  --mo-elevated: rgba(255, 255, 255, 0.95);
+  --mo-input: rgba(243, 245, 250, 0.90);
+  --mo-border-glass: rgba(255, 255, 255, 0.95);
+  --mo-border: rgba(15, 23, 42, 0.08);
+  --mo-border-accent: rgba(91, 33, 182, 0.25);
+  --mo-text: #0b1120;
+  --mo-text-secondary: #334155;
+  --mo-muted: #64748b;
+  --mo-dim: #94a3b8;
+  --mo-shadow-board: 0 40px 100px -25px rgba(15, 23, 42, 0.15), 0 20px 45px -15px rgba(91, 33, 182, 0.10);
+  --mo-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --mo-shadow-glow: 0 10px 30px -5px rgba(124, 58, 237, 0.35);
+
+  color: var(--mo-text);
+  background: var(--mo-page);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --mo-page: #080a12;
+  --mo-ambient-1: rgba(124, 58, 237, 0.16);
+  --mo-ambient-2: rgba(56, 189, 248, 0.15);
+  --mo-ambient-3: rgba(236, 72, 153, 0.12);
+  --mo-surface: rgba(18, 24, 42, 0.68);
+  --mo-card: rgba(24, 32, 56, 0.70);
+  --mo-card-hover: rgba(32, 44, 76, 0.88);
+  --mo-elevated: rgba(16, 22, 38, 0.85);
+  --mo-input: rgba(12, 17, 30, 0.85);
+  --mo-border-glass: rgba(255, 255, 255, 0.14);
+  --mo-border: rgba(255, 255, 255, 0.08);
+  --mo-border-accent: rgba(124, 58, 237, 0.45);
+  --mo-text: #f8fafc;
+  --mo-text-secondary: #cbd5e1;
+  --mo-muted: #94a3b8;
+  --mo-dim: #64748b;
+  --mo-shadow-board: 0 45px 120px -20px rgba(0, 0, 0, 0.70), 0 0 50px rgba(124, 58, 237, 0.18);
+  --mo-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.50);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  color: var(--mo-text);
+  font-family: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+  background:
+    radial-gradient(ellipse at 18% 0%, var(--mo-ambient-1), transparent 38rem),
+    radial-gradient(ellipse at 90% 70%, var(--mo-ambient-2), transparent 34rem),
+    radial-gradient(ellipse at 50% 100%, var(--mo-ambient-3), transparent 42rem),
+    var(--mo-page);
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  color: var(--mo-text);
+}
+
+:focus-visible {
+  outline: 3px solid #9b87ff;
+  outline-offset: 2px;
+}
+
+::selection {
+  color: #fff;
+  background: #6d4aff;
+}
+
+.portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid var(--mo-border);
+  background: var(--mo-surface);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.mo-card {
+  border: 1px solid var(--mo-border-glass);
+  border-radius: 1rem;
+  background: var(--mo-card);
+  box-shadow: var(--mo-shadow);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.mo-panel {
+  border: 1px solid var(--mo-border);
+  border-radius: 1.25rem;
+  background: var(--mo-surface);
+  box-shadow: var(--mo-shadow-board);
+  backdrop-filter: blur(22px) saturate(160%);
+}
+
+.mo-input {
+  width: 100%;
+  border: 1px solid var(--mo-border);
+  border-radius: 0.75rem;
+  background: var(--mo-input);
+  color: var(--mo-text);
+}
+
+.mo-input:focus {
+  border-color: var(--mo-violet-soft);
+  box-shadow: 0 0 0 3px var(--mo-violet-tint);
+  outline: none;
+}
+
+:root[data-theme="dark"] .bg-white,
+:root[data-theme="dark"] .bg-slate-50,
+:root[data-theme="dark"] .bg-slate-100 {
+  background-color: var(--mo-surface);
+}
+
+:root[data-theme="dark"] .text-slate-900,
+:root[data-theme="dark"] .text-slate-800,
+:root[data-theme="dark"] .text-slate-700,
+:root[data-theme="dark"] .text-slate-600 {
+  color: var(--mo-text);
+}
+
+:root[data-theme="dark"] .text-slate-500,
+:root[data-theme="dark"] .text-slate-400 {
+  color: var(--mo-muted);
+}
+
+:root[data-theme="dark"] .border-slate-200,
+:root[data-theme="dark"] .border-slate-100 {
+  border-color: var(--mo-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+

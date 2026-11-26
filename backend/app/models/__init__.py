@@ -1,9 +1,4 @@
-﻿"""
-Importing every model here ensures Base.metadata is fully populated
-before Alembic (or anything else) inspects it.
-"""
-
-from app.models.audit_log import AuditLog  # noqa: F401
+﻿from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.department import Department  # noqa: F401
 from app.models.employee import AvailabilityStatus, Employee, EmploymentStatus  # noqa: F401
 from app.models.employee_issue import EmployeeIssue, IssueCategory, IssueStatus  # noqa: F401
@@ -15,6 +10,7 @@ from app.models.gl_account import AccountType, GLAccount  # noqa: F401
 from app.models.journal_entry import JournalEntry, JournalEntryStatus  # noqa: F401
 from app.models.journal_entry_line import JournalEntryLine  # noqa: F401
 from app.models.notification import Notification  # noqa: F401
+from app.models.organization import Organization, OrganizationAdminLog, OrganizationMember, OrganizationSettings, PlatformAdmin  # noqa: F401
 from app.models.party import Party, PartyType  # noqa: F401
 from app.models.payroll_profile import PayFrequency, PayrollProfile, PayrollProfileStatus  # noqa: F401
 from app.models.permission import Permission  # noqa: F401
@@ -29,3 +25,4 @@ from app.models.ticket import Ticket, TicketStatus  # noqa: F401
 from app.models.ticket_log import TicketLog  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.models.user_role import UserRole  # noqa: F401
+

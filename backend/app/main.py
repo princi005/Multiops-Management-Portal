@@ -1,37 +1,15 @@
-﻿"""
-FastAPI application entry point.
-Run with: uvicorn app.main:app --reload
-"""
-
-from fastapi import FastAPI
+﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import (
-    auth,
-    dashboard,
-    departments,
-    directory,
-    employee_requests,
-    employees,
-    financial_periods,
-    gl_accounts,
-    health,
-    issues,
-    journal_entries,
-    me,
-    notifications,
-    parties,
-    payroll,
-    profile_changes,
-    projects,
-    reports,
-    skills,
-    tickets,
+    auth, dashboard, departments, directory, employee_requests, employees,
+    financial_periods, gl_accounts, health, issues, journal_entries, me,
+    notifications, organizations, parties, payroll, platform, profile_changes,
+    projects, reports, skills, tickets,
 )
 from app.core.config import get_settings
 
 settings = get_settings()
-
 app = FastAPI(title=settings.app_name)
 
 app.add_middleware(
@@ -42,23 +20,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(health.router)
-app.include_router(auth.router)
-app.include_router(departments.router)
-app.include_router(directory.router)
-app.include_router(employees.router)
-app.include_router(employee_requests.router)
-app.include_router(dashboard.router)
-app.include_router(gl_accounts.router)
-app.include_router(financial_periods.router)
-app.include_router(journal_entries.router)
-app.include_router(parties.router)
-app.include_router(reports.router)
-app.include_router(payroll.router)
-app.include_router(skills.router)
-app.include_router(projects.router)
-app.include_router(tickets.router)
-app.include_router(notifications.router)
-app.include_router(issues.router)
-app.include_router(me.router)
-app.include_router(profile_changes.router)
+for route_module in (
+    health, auth, departments, directory, employees, employee_requests, dashboard,
+    gl_accounts, financial_periods, journal_entries, parties, reports, payroll,
+    skills, projects, tickets, notifications, issues, me, profile_changes,
+    organizations, platform,
+):
+    app.include_router(route_module.router)
