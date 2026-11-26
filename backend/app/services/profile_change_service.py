@@ -40,6 +40,7 @@ def _to_hr_read(
     return ChangeRequestHRRead(
         **ChangeRequestRead.model_validate(request).model_dump(),
         employee_id=request.employee_id,
+        organization_id=request.organization_id,
         employee_code=employee_code,
         employee_name=employee_name,
         employee_email=employee_email,
@@ -55,7 +56,7 @@ def _hr_select():
 
 
 async def submit_change_request(
-    db: AsyncSession, user: User, payload: ChangeRequestCreate
+    db: AsyncSession, user: User, payload: ChangeRequestCreate, organization_id: uuid.UUID
 ) -> ProfileChangeRequest:
     employee = await get_my_employee(db, user)
 
@@ -72,6 +73,7 @@ async def submit_change_request(
             .select_from(ProfileChangeRequest)
             .where(
                 ProfileChangeRequest.employee_id == employee.id,
+                ProfileChangeRequest.organization_id == organization_id,
                 ProfileChangeRequest.field == ChangeField.GENERAL,
                 ProfileChangeRequest.status == ChangeStatus.PENDING,
             )
@@ -91,6 +93,7 @@ async def submit_change_request(
         pending = await db.execute(
             select(ProfileChangeRequest.id).where(
                 ProfileChangeRequest.employee_id == employee.id,
+                ProfileChangeRequest.organization_id == organization_id,
                 ProfileChangeRequest.field == payload.field,
                 ProfileChangeRequest.status == ChangeStatus.PENDING,
             )
@@ -103,6 +106,7 @@ async def submit_change_request(
 
     request = ProfileChangeRequest(
         id=uuid.uuid4(),
+        organization_id=organization_id,
         employee_id=employee.id,
         field=payload.field,
         old_value=current,
@@ -122,21 +126,21 @@ async def submit_change_request(
     return request
 
 
-async def list_my_requests(db: AsyncSession, user: User) -> list[ProfileChangeRequest]:
+async def list_my_requests(db: AsyncSession, user: User, organization_id: uuid.UUID) -> list[ProfileChangeRequest]:
     employee = await get_my_employee(db, user)
     result = await db.execute(
         select(ProfileChangeRequest)
-        .where(ProfileChangeRequest.employee_id == employee.id)
+        .where(ProfileChangeRequest.employee_id == employee.id, ProfileChangeRequest.organization_id == organization_id)
         .order_by(ProfileChangeRequest.created_at.desc())
     )
     return list(result.scalars().all())
 
 
-async def cancel_my_request(db: AsyncSession, user: User, request_id: uuid.UUID) -> ProfileChangeRequest:
+async def cancel_my_request(db: AsyncSession, user: User, organization_id: uuid.UUID, request_id: uuid.UUID) -> ProfileChangeRequest:
     employee = await get_my_employee(db, user)
     result = await db.execute(
         select(ProfileChangeRequest)
-        .where(ProfileChangeRequest.id == request_id, ProfileChangeRequest.employee_id == employee.id)
+        .where(ProfileChangeRequest.id == request_id, ProfileChangeRequest.employee_id == employee.id, ProfileChangeRequest.organization_id == organization_id)
         .with_for_update()
     )
     request = result.scalar_one_or_none()
@@ -153,9 +157,9 @@ async def cancel_my_request(db: AsyncSession, user: User, request_id: uuid.UUID)
 
 
 async def list_requests_for_hr(
-    db: AsyncSession, status_filter: ChangeStatus | None
+    db: AsyncSession, organization_id: uuid.UUID, status_filter: ChangeStatus | None
 ) -> list[ChangeRequestHRRead]:
-    stmt = _hr_select()
+    stmt = _hr_select().where(ProfileChangeRequest.organization_id == organization_id)
     if status_filter is not None:
         stmt = stmt.where(ProfileChangeRequest.status == status_filter)
     # Pending first (they need action), then newest first.
@@ -167,8 +171,8 @@ async def list_requests_for_hr(
     return [_to_hr_read(*row) for row in result.all()]
 
 
-async def _get_hr_request(db: AsyncSession, request_id: uuid.UUID) -> ChangeRequestHRRead:
-    result = await db.execute(_hr_select().where(ProfileChangeRequest.id == request_id))
+async def _get_hr_request(db: AsyncSession, request_id: uuid.UUID, organization_id: uuid.UUID) -> ChangeRequestHRRead:
+    result = await db.execute(_hr_select().where(ProfileChangeRequest.id == request_id, ProfileChangeRequest.organization_id == organization_id))
     row = result.first()
     if row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found.")
@@ -176,7 +180,7 @@ async def _get_hr_request(db: AsyncSession, request_id: uuid.UUID) -> ChangeRequ
 
 
 async def decide_request(
-    db: AsyncSession, decider: User, request_id: uuid.UUID, approve: bool, note: str | None
+    db: AsyncSession, decider: User, organization_id: uuid.UUID, request_id: uuid.UUID, approve: bool, note: str | None
 ) -> ChangeRequestHRRead:
     note = (note or "").strip() or None
     if not approve and note is None:
@@ -186,7 +190,7 @@ async def decide_request(
         )
 
     result = await db.execute(
-        select(ProfileChangeRequest).where(ProfileChangeRequest.id == request_id).with_for_update()
+        select(ProfileChangeRequest).where(ProfileChangeRequest.id == request_id, ProfileChangeRequest.organization_id == organization_id).with_for_update()
     )
     request = result.scalar_one_or_none()
     if request is None:
@@ -223,4 +227,4 @@ async def decide_request(
     request.decided_at = datetime.now(timezone.utc)
     await db.commit()
 
-    return await _get_hr_request(db, request_id)
+    return await _get_hr_request(db, request_id, organization_id)

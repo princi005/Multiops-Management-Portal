@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { CalendarDays, CheckCircle2, Clock3, Home, MapPin, ShieldAlert } from "lucide-react";
 import PortalHeader from "../../components/PortalHeader";
@@ -37,6 +37,7 @@ export default function AttendancePreviewPage() {
   const [clockedInAt, setClockedInAt] = useState<Date | null>(null);
   const [punchEvents, setPunchEvents] = useState<PunchEvent[]>([]);
   const [activeRequest, setActiveRequest] = useState<RequestKind | null>(null);
+  const [submittedRequests, setSubmittedRequests] = useState<Array<{ id: number; kind: RequestKind; date: string; details: string; escalated: boolean }>>([]);
   const [requestDate, setRequestDate] = useState(() => dateKey(new Date()));
   const [requestDetails, setRequestDetails] = useState("");
   const [escalateToHr, setEscalateToHr] = useState(true);
@@ -84,6 +85,7 @@ export default function AttendancePreviewPage() {
   function submitRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!activeRequest) return;
+    setSubmittedRequests((items) => [{ id: Date.now(), kind: activeRequest, date: requestDate, details: requestDetails.trim(), escalated: escalateToHr }, ...items]);
     setNotice(`${activeRequest} request preview saved for ${requestDate}${escalateToHr ? " and marked for HR review" : ""}.`);
     setActiveRequest(null);
     setRequestDetails("");
@@ -247,6 +249,25 @@ export default function AttendancePreviewPage() {
               ))}
             </div>
             {notice && <p role="status" className="mt-4 text-sm text-emerald-700">{notice}</p>}
+            <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--mo-border)" }}>
+              <h3 className="font-bold">Request history preview</h3>
+              {submittedRequests.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-500">Requests you add in this preview will appear here.</p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {submittedRequests.map((request) => (
+                    <li key={request.id} className="rounded-xl border p-3 text-sm" style={{ borderColor: "var(--mo-border)" }}>
+                      <div className="flex flex-wrap justify-between gap-2">
+                        <strong>{request.kind} · {request.date}</strong>
+                        <span className="text-xs text-slate-500">{request.escalated ? "HR review requested" : "Manager review"}</span>
+                      </div>
+                      <p className="mt-1 text-slate-600">{request.details}</p>
+                      <p className="mt-1 text-xs text-slate-500">Preview only · not submitted or saved.</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
               <span>Attendance issues can be escalated to HR. These preview requests are not submitted to a server.</span>

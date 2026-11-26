@@ -1,4 +1,4 @@
-﻿import { RotateCcw, Trash2 } from "lucide-react";
+import { RotateCcw, Trash2 } from "lucide-react";
 import ErrorState from "../../components/ErrorState";
 import LoadingState from "../../components/LoadingState";
 import { useDeletedProjects, useRestoreProject } from "../../hooks/useProjects";
@@ -67,6 +67,12 @@ export default function ProjectBinPanel() {
 
   const deletedProjects = projects.data ?? [];
 
+  const recycleBinNotice = (
+    <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+      Projects can be restored during the recovery period. Permanent deletion is not available in this UI preview.
+    </p>
+  );
+
   if (deletedProjects.length === 0) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
@@ -80,7 +86,7 @@ export default function ProjectBinPanel() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3">`n      {recycleBinNotice}
       {deletedProjects.map((project) => (
         <DeletedProjectRow key={project.id} project={project} />
       ))}

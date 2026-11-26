@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import require_role
+from app.core.organization_roles import require_org_role
 from app.db.session import get_db
 from app.models.department import Department
 from app.models.user import User
@@ -21,9 +21,14 @@ router = APIRouter(prefix="/departments", tags=["departments"])
 @router.get("", response_model=list[DepartmentRead])
 async def list_departments(
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(require_role("CEO", "HR")),
+    active=Depends(require_org_role("CEO", "HR")),
 ):
-    result = await db.execute(select(Department).order_by(Department.name))
+    organization, _membership = active
+    result = await db.execute(
+        select(Department)
+        .where(Department.organization_id == organization.id)
+        .order_by(Department.name)
+    )
     return result.scalars().all()
 
 
@@ -31,9 +36,14 @@ async def list_departments(
 async def create_department(
     payload: DepartmentCreate,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(require_role("HR")),
+    active=Depends(require_org_role("HR")),
 ):
-    department = Department(id=uuid.uuid4(), **payload.model_dump())
+    organization, _membership = active
+    department = Department(
+        id=uuid.uuid4(),
+        organization_id=organization.id,
+        **payload.model_dump(),
+    )
     db.add(department)
     await db.commit()
     await db.refresh(department)

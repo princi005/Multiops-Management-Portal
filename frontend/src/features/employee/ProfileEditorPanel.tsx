@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { Plus, ShieldCheck, Trash2 } from "lucide-react";
 import type { MyProfile } from "../../types/me";
@@ -118,6 +118,8 @@ function TextArea({
 
 export default function ProfileEditorPanel({ profile, salaryContent }: { profile?: MyProfile; salaryContent?: ReactNode }) {
   const [tab, setTab] = useState<Tab>("personal");
+  const [showBirthday, setShowBirthday] = useState(true);
+  const [showWorkAnniversary, setShowWorkAnniversary] = useState(true);
   const [notice, setNotice] = useState("");
   const [photoName, setPhotoName] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
@@ -254,10 +256,17 @@ export default function ProfileEditorPanel({ profile, salaryContent }: { profile
                   <TextArea label="About me" value={draft.about} onChange={(value) => update("about", value)} maxLength={1000} />
                   <TextArea label="Hobbies" value={draft.hobbies} onChange={(value) => update("hobbies", value)} maxLength={500} />
                 </div>
-                <label className="mt-4 flex items-center gap-3 rounded-xl border p-3 text-sm" style={{ borderColor: "var(--mo-border)" }}>
-                  <input type="checkbox" defaultChecked />
-                  Show my birthday and birthday announcements to colleagues
-                </label>
+                <div className="mt-4 space-y-2">
+                  <label className="flex items-center gap-3 rounded-xl border p-3 text-sm" style={{ borderColor: "var(--mo-border)" }}>
+                    <input type="checkbox" checked={showBirthday} onChange={(event) => setShowBirthday(event.target.checked)} />
+                    Show my birthday and birthday announcements to colleagues
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border p-3 text-sm" style={{ borderColor: "var(--mo-border)" }}>
+                    <input type="checkbox" checked={showWorkAnniversary} onChange={(event) => setShowWorkAnniversary(event.target.checked)} />
+                    Show my work anniversary and anniversary announcements to colleagues
+                  </label>
+                  <p className="text-xs text-slate-500">Preview preferences only; they are not saved yet.</p>
+                </div>
               </section>
 
               <section className="border-t pt-5" style={{ borderColor: "var(--mo-border)" }}>

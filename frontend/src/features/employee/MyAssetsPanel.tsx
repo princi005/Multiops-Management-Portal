@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Laptop, Monitor, Plus, RefreshCw, Wrench } from "lucide-react";
 
 type Asset = {
@@ -52,7 +52,7 @@ export default function MyAssetsPanel() {
         assetName: selectedAsset.name,
         deviceId: selectedAsset.deviceId,
         requestType,
-        supportTeam: "IT";
+        supportTeam: "IT",
         details: details.trim(),
         createdAt: new Date().toLocaleString(),
       },
@@ -204,10 +204,8 @@ export default function MyAssetsPanel() {
                     Preview only
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
-                <p className="text-xs text-slate-500">Requested team: {request.supportTeam}</p>
-                  {request.deviceId} · {request.createdAt}
-                </p>
+                <p className="mt-1 text-xs text-slate-500">Requested team: {request.supportTeam}</p>
+                <p className="mt-1 text-xs text-slate-500">{request.deviceId} · {request.createdAt}</p>
                 <p className="mt-3 whitespace-pre-wrap text-sm">{request.details}</p>
               </article>
             ))}

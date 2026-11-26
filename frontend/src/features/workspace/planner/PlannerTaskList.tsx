@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { CheckCircle2, Circle, Plus } from "lucide-react";
 import AppButton from "../../../components/ui/AppButton";
 import type { PlannerTask } from "./types";
@@ -14,6 +14,8 @@ export default function PlannerTaskList({
 }) {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [taskFilter, setTaskFilter] = useState<"all" | "open" | "completed">("all");
+  const visibleTasks = tasks.filter((task) => taskFilter === "all" || (taskFilter === "completed" ? task.completed : !task.completed));
 
   function submitTask(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,8 +47,16 @@ export default function PlannerTaskList({
         </AppButton>
       </form>
 
+      <div className="mt-4 flex gap-2" role="group" aria-label="Filter planner tasks">
+        {(["all", "open", "completed"] as const).map((filter) => (
+          <button key={filter} type="button" aria-pressed={taskFilter === filter} onClick={() => setTaskFilter(filter)}
+            className={`rounded-full border px-3 py-1.5 text-xs font-semibold capitalize ${taskFilter === filter ? "border-violet-300 bg-violet-100 text-violet-900" : "border-slate-200 text-slate-600"}`}>
+            {filter}
+          </button>
+        ))}
+      </div>
       <div className="mt-4 divide-y" style={{ borderColor: "var(--mo-border)" }}>
-        {tasks.map((task) => (
+        {visibleTasks.map((task) => (
           <button
             key={task.id}
             type="button"

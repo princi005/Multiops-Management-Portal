@@ -25,7 +25,7 @@ const inputClass =
   "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500";
 
 export default function AddEmployeePanel({ onClose }: { onClose: () => void }) {
-  const { data: departments } = useDepartments();
+  const { data: departments, isLoading: departmentsLoading, isError: departmentsError, refetch: refetchDepartments } = useDepartments();
   const createRequest = useCreateEmployeeRequest();
 
   const {
@@ -95,7 +95,13 @@ export default function AddEmployeePanel({ onClose }: { onClose: () => void }) {
 
           <div>
             <label className="block text-sm text-slate-700">Department</label>
-            <select {...register("department_id")} className={inputClass}>
+            {departmentsLoading && <p className="mb-2 text-xs text-slate-500">Loading departments...</p>}
+            {departmentsError && (
+              <div className="mb-2 flex items-center justify-between text-xs text-red-600">
+                <span>Could not load departments.</span>
+                <button type="button" onClick={() => refetchDepartments()} className="font-medium underline">Retry</button>
+              </div>
+            )}            <select {...register("department_id")} className={inputClass} disabled={departmentsLoading || departmentsError}>
               <option value="">- None -</option>
               {departments?.map((d) => (
                 <option key={d.id} value={d.id}>

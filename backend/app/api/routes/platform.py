@@ -1,7 +1,7 @@
-﻿import uuid
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +16,7 @@ from app.models.organization import (
 )
 from app.models.user import User
 from app.schemas.organization import OrganizationCreate, OrganizationRead
-from app.schemas.platform import PlatformAuditRead, PlatformOrganizationUpdate
+from app.schemas.platform import PlatformAuditRead, PlatformOrganizationRead, PlatformOrganizationUpdate
 
 router = APIRouter(prefix="/platform", tags=["platform-admin"])
 
@@ -27,11 +27,63 @@ async def require_platform_admin(db: AsyncSession, user_id: uuid.UUID) -> None:
         raise HTTPException(status_code=403, detail="Platform Admin access required.")
 
 
-@router.get("/organizations", response_model=list[OrganizationRead])
+@router.get("/organizations", response_model=list[PlatformOrganizationRead])
 async def list_organizations(db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
     await require_platform_admin(db, user.id)
-    result = await db.execute(select(Organization).order_by(Organization.created_at.desc()))
-    return result.scalars().all()
+
+    organizations_result = await db.execute(select(Organization).order_by(Organization.created_at.desc()))
+    organizations = organizations_result.scalars().all()
+
+    counts_result = await db.execute(
+        select(OrganizationMember.organization_id, func.count(OrganizationMember.id))
+        .where(OrganizationMember.is_active.is_(True))
+        .group_by(OrganizationMember.organization_id)
+    )
+    active_user_counts = dict(counts_result.all())
+
+    admins_result = await db.execute(
+        select(
+            OrganizationMember.organization_id,
+            User.id,
+            User.email,
+            User.full_name,
+        )
+        .join(User, User.id == OrganizationMember.user_id)
+        .where(
+            OrganizationMember.is_active.is_(True),
+            func.lower(OrganizationMember.role) == "org_admin",
+        )
+    )
+    admins_by_organization: dict[uuid.UUID, list[dict]] = {}
+    for organization_id, admin_id, email, full_name in admins_result.all():
+        admins_by_organization.setdefault(organization_id, []).append({
+            "user_id": admin_id,
+            "email": email,
+            "full_name": full_name,
+        })
+
+    return [
+        {
+            "id": organization.id,
+            "name": organization.name,
+            "slug": organization.slug,
+            "domain": organization.domain,
+            "company_prefix": organization.company_prefix,
+            "is_active": organization.is_active,
+            "subscription_plan": organization.subscription_plan,
+            "subscription_status": organization.subscription_status,
+            "subscription_reference": organization.subscription_reference,
+            "subscription_expires_at": organization.subscription_expires_at,
+            "subscription_renews_at": organization.subscription_renews_at,
+            "subscription_rate_amount": organization.subscription_rate_amount,
+            "subscription_rate_currency": organization.subscription_rate_currency,
+            "subscription_rate_period": organization.subscription_rate_period,
+            "active_user_count": active_user_counts.get(organization.id, 0),
+            "organization_admins": admins_by_organization.get(organization.id, []),
+            "created_at": organization.created_at,
+        }
+        for organization in organizations
+    ]
 
 
 @router.get("/audit", response_model=list[PlatformAuditRead])

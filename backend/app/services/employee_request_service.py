@@ -92,7 +92,7 @@ async def _ensure_employee_not_already_exited(db: AsyncSession, employee_id: uui
 
 
 async def create_request(
-    db: AsyncSession, payload: EmployeeRequestCreate, requested_by: User
+    db: AsyncSession, payload: EmployeeRequestCreate, requested_by: User, organization_id: uuid.UUID | None = None
 ) -> EmployeeRequest:
     try:
         if payload.request_type == RequestType.CREATION:
@@ -114,6 +114,7 @@ async def create_request(
 
     request = EmployeeRequest(
         id=uuid.uuid4(),
+        organization_id=organization_id,
         request_type=payload.request_type,
         payload=clean_payload,
         requested_by_id=requested_by.id,

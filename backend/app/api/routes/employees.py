@@ -3,7 +3,9 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user
 from app.core.permissions import require_role
+from app.core.organization_roles import require_org_role
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.employee import (
@@ -24,18 +26,20 @@ router = APIRouter(prefix="/employees", tags=["employees"])
 @router.get("", response_model=list[EmployeeRead])
 async def list_employees(
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(require_role("CEO", "HR", "Accounts", "Manager")),
+    active=Depends(require_org_role("CEO", "HR", "Accounts", "Manager")),
 ):
-    return await employee_service.list_employees(db)
+    organization, _membership = active
+    return await employee_service.list_employees_for_org(db, organization.id)
 
 
 @router.get("/{employee_id}", response_model=EmployeeRead)
 async def get_employee(
     employee_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(require_role("CEO", "HR", "Accounts", "Manager")),
+    active=Depends(require_org_role("CEO", "HR", "Accounts", "Manager")),
 ):
-    return await employee_service.get_employee(db, employee_id)
+    organization, _membership = active
+    return await employee_service.get_employee_for_org(db, employee_id, organization.id)
 
 
 @router.post("", response_model=EmployeeRead, status_code=201)
@@ -61,14 +65,16 @@ async def update_employee(
     employee_id: uuid.UUID,
     payload: EmployeeUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("HR", "Accounts")),
+    current_user: User = Depends(get_current_user),
+    active=Depends(require_org_role("HR", "Accounts")),
 ):
     if "HR" in [r.role.name for r in current_user.user_roles] and payload.employment_status is not None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="HR cannot change employment status directly. Submit an exit request instead.",
         )
-    return await employee_service.update_employee(db, employee_id, payload)
+    organization, _membership = active
+    return await employee_service.update_employee_for_org(db, employee_id, organization.id, payload)
 
 
 @router.patch("/{employee_id}/availability", response_model=EmployeeRead)
@@ -76,9 +82,10 @@ async def update_availability(
     employee_id: uuid.UUID,
     payload: AvailabilityUpdate,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(require_role("HR", "Accounts", "Manager")),
+    active=Depends(require_org_role("HR", "Accounts", "Manager")),
 ):
-    return await employee_service.update_availability(db, employee_id, payload)
+    organization, _membership = active
+    return await employee_service.update_availability_for_org(db, employee_id, organization.id, payload)
 
 
 @router.delete("/{employee_id}", response_model=EmployeeRead)
@@ -103,9 +110,10 @@ async def reset_password(
 async def list_skills(
     employee_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(require_role("CEO", "HR", "Accounts", "Manager")),
+    active=Depends(require_org_role("CEO", "HR", "Accounts", "Manager")),
 ):
-    return await employee_service.list_employee_skills(db, employee_id)
+    organization, _membership = active
+    return await employee_service.list_employee_skills(db, employee_id, organization.id)
 
 
 @router.post("/{employee_id}/skills", response_model=list[SkillTag])
@@ -113,9 +121,10 @@ async def assign_skill(
     employee_id: uuid.UUID,
     payload: AssignSkill,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(require_role("HR", "Manager")),
+    active=Depends(require_org_role("HR", "Manager")),
 ):
-    return await employee_service.assign_skill(db, employee_id, payload.skill_id)
+    organization, _membership = active
+    return await employee_service.assign_skill(db, employee_id, payload.skill_id, organization.id)
 
 
 @router.delete("/{employee_id}/skills/{skill_id}", response_model=list[SkillTag])
@@ -123,6 +132,7 @@ async def remove_skill(
     employee_id: uuid.UUID,
     skill_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(require_role("HR", "Manager")),
+    active=Depends(require_org_role("HR", "Manager")),
 ):
-    return await employee_service.remove_skill(db, employee_id, skill_id)
+    organization, _membership = active
+    return await employee_service.remove_skill(db, employee_id, skill_id, organization.id)

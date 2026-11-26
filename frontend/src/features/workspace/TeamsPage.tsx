@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Building2, Search, Users } from "lucide-react";
 import PortalHeader from "../../components/PortalHeader";
 import { useActiveOrganization } from "../../hooks/useActiveOrganizationInfo";
@@ -56,6 +56,17 @@ export default function TeamsPage() {
           <p className="mt-2 max-w-3xl text-sm text-slate-500">
             Browse departments, managers, team leads, and team members.
           </p>
+          <div className="mt-5 rounded-2xl border p-4" style={{ borderColor: "var(--mo-border)", backgroundColor: "var(--mo-card)" }}>
+            <p className="text-xs font-bold uppercase tracking-wider text-violet-700">Sample reporting hierarchy</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+              <span className="rounded-lg bg-violet-100 px-3 py-2 font-semibold">Executive Office</span>
+              <span aria-hidden="true" className="text-slate-400">→</span>
+              <span className="rounded-lg bg-cyan-100 px-3 py-2 font-semibold">Managers</span>
+              <span aria-hidden="true" className="text-slate-400">→</span>
+              <span className="rounded-lg bg-slate-100 px-3 py-2 font-semibold">Team leads & members</span>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">Illustrative only; the directory below uses sample reporting lines.</p>
+          </div>
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2">

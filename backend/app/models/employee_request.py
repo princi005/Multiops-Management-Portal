@@ -31,6 +31,9 @@ class EmployeeRequest(Base):
     __tablename__ = "employee_requests"
 
     id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     request_type: Mapped[RequestType] = mapped_column(
         Enum(RequestType, name="employee_request_type_enum"), nullable=False
     )

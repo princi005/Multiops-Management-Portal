@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -9,6 +9,7 @@ from app.api.tenant import get_current_organization
 from app.db.session import get_db
 from app.models.organization import Organization, OrganizationAdminLog, OrganizationMember, OrganizationSettings
 from app.models.user import User
+from app.schemas.platform import OrganizationSubscriptionRateRead, OrganizationSubscriptionRateUpdate
 from app.schemas.organization import (
     MembershipRead,
     OrganizationAuditRead,
@@ -148,6 +149,66 @@ async def update_settings(
     await db.commit()
     return OrganizationConfig.model_validate(data)
 
+
+@router.get("/{org_id}/subscription-rate", response_model=OrganizationSubscriptionRateRead)
+async def read_subscription_rate(
+    org_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    await require_org_admin(db, user.id, org_id)
+    organization = await db.get(Organization, org_id)
+    if organization is None:
+        raise HTTPException(status_code=404, detail="Organization not found.")
+
+    return OrganizationSubscriptionRateRead(
+        organization_id=org_id,
+        subscription_rate_amount=organization.subscription_rate_amount,
+        subscription_rate_currency=organization.subscription_rate_currency,
+        subscription_rate_period=organization.subscription_rate_period,
+    )
+@router.patch("/{org_id}/subscription-rate", response_model=OrganizationSubscriptionRateRead)
+async def update_subscription_rate(
+    org_id: uuid.UUID,
+    payload: OrganizationSubscriptionRateUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    await require_org_admin(db, user.id, org_id)
+    organization = await db.get(Organization, org_id)
+    if organization is None:
+        raise HTTPException(status_code=404, detail="Organization not found.")
+
+    previous = {
+        "amount": str(organization.subscription_rate_amount) if organization.subscription_rate_amount is not None else None,
+        "currency": organization.subscription_rate_currency,
+        "period": organization.subscription_rate_period,
+    }
+    organization.subscription_rate_amount = payload.subscription_rate_amount
+    organization.subscription_rate_currency = payload.subscription_rate_currency
+    organization.subscription_rate_period = payload.subscription_rate_period.strip()
+
+    db.add(OrganizationAdminLog(
+        organization_id=org_id,
+        actor_user_id=user.id,
+        action="subscription.rate.updated",
+        details={
+            "previous": previous,
+            "updated": {
+                "amount": str(payload.subscription_rate_amount),
+                "currency": payload.subscription_rate_currency,
+                "period": payload.subscription_rate_period.strip(),
+            },
+        },
+    ))
+    await db.commit()
+
+    return OrganizationSubscriptionRateRead(
+        organization_id=org_id,
+        subscription_rate_amount=organization.subscription_rate_amount,
+        subscription_rate_currency=organization.subscription_rate_currency,
+        subscription_rate_period=organization.subscription_rate_period,
+    )
 
 @router.get("/{org_id}/members", response_model=list[OrganizationMemberRead])
 async def list_members(

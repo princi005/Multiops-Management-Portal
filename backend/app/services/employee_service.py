@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.supabase_admin import get_supabase_admin
 from app.models.employee import Employee
+from app.models.organization import OrganizationMember
 from app.models.employee_skill import EmployeeSkill
 from app.models.skill import Skill
 from app.models.user import User
@@ -42,6 +43,79 @@ async def get_employee(db: AsyncSession, employee_id: uuid.UUID) -> Employee:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found.")
     return employee
 
+
+async def list_employees_for_org(db: AsyncSession, organization_id: uuid.UUID) -> list[Employee]:
+    result = await db.execute(
+        select(Employee)
+        .join(OrganizationMember, OrganizationMember.user_id == Employee.user_id)
+        .where(
+            OrganizationMember.organization_id == organization_id,
+            OrganizationMember.is_active.is_(True),
+        )
+        .options(selectinload(Employee.department))
+        .order_by(Employee.employee_code)
+    )
+    return list(result.scalars().unique().all())
+
+
+async def get_employee_for_org(
+    db: AsyncSession, employee_id: uuid.UUID, organization_id: uuid.UUID
+) -> Employee:
+    result = await db.execute(
+        select(Employee)
+        .join(OrganizationMember, OrganizationMember.user_id == Employee.user_id)
+        .where(
+            Employee.id == employee_id,
+            OrganizationMember.organization_id == organization_id,
+            OrganizationMember.is_active.is_(True),
+        )
+        .options(selectinload(Employee.department))
+    )
+    employee = result.scalar_one_or_none()
+    if employee is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found.")
+    return employee
+
+
+async def update_employee_for_org(
+    db: AsyncSession,
+    employee_id: uuid.UUID,
+    organization_id: uuid.UUID,
+    payload: EmployeeUpdate,
+) -> Employee:
+    employee = await get_employee_for_org(db, employee_id, organization_id)
+    changes = payload.model_dump(exclude_unset=True)
+
+    if changes.get("department_id") is not None:
+        from app.models.department import Department
+
+        department = await db.scalar(
+            select(Department).where(
+                Department.id == changes["department_id"],
+                Department.organization_id == organization_id,
+            )
+        )
+        if department is None:
+            raise HTTPException(status_code=422, detail="Choose a department from this organization.")
+
+    for field, value in changes.items():
+        setattr(employee, field, value)
+    await db.commit()
+    await db.refresh(employee, attribute_names=["department"])
+    return employee
+
+
+async def update_availability_for_org(
+    db: AsyncSession,
+    employee_id: uuid.UUID,
+    organization_id: uuid.UUID,
+    payload: AvailabilityUpdate,
+) -> Employee:
+    employee = await get_employee_for_org(db, employee_id, organization_id)
+    employee.availability_status = payload.availability_status
+    await db.commit()
+    await db.refresh(employee, attribute_names=["department"])
+    return employee
 
 async def get_employee_by_user_id(db: AsyncSession, user_id: uuid.UUID) -> Employee | None:
     result = await db.execute(select(Employee).where(Employee.user_id == user_id))
@@ -164,16 +238,21 @@ async def reset_employee_password(db: AsyncSession, employee_id: uuid.UUID) -> P
     return PasswordResetResponse(employee_id=employee.id, email=user.email, temporary_password=new_password)
 
 
-async def list_employee_skills(db: AsyncSession, employee_id: uuid.UUID) -> list[Skill]:
-    await get_employee(db, employee_id)
+async def list_employee_skills(
+    db: AsyncSession, employee_id: uuid.UUID, organization_id: uuid.UUID
+) -> list[Skill]:
+    await get_employee_for_org(db, employee_id, organization_id)
     result = await db.execute(
-        select(Skill).join(EmployeeSkill, EmployeeSkill.skill_id == Skill.id).where(EmployeeSkill.employee_id == employee_id)
+        select(Skill)
+        .join(EmployeeSkill, EmployeeSkill.skill_id == Skill.id)
+        .where(EmployeeSkill.employee_id == employee_id)
     )
     return list(result.scalars().all())
 
-
-async def assign_skill(db: AsyncSession, employee_id: uuid.UUID, skill_id: uuid.UUID) -> list[Skill]:
-    await get_employee(db, employee_id)
+async def assign_skill(
+    db: AsyncSession, employee_id: uuid.UUID, skill_id: uuid.UUID, organization_id: uuid.UUID
+) -> list[Skill]:
+    await get_employee_for_org(db, employee_id, organization_id)
     result = await db.execute(select(Skill).where(Skill.id == skill_id))
     if result.scalar_one_or_none() is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Skill not found.")
@@ -184,12 +263,14 @@ async def assign_skill(db: AsyncSession, employee_id: uuid.UUID, skill_id: uuid.
     if result.scalar_one_or_none() is None:
         db.add(EmployeeSkill(employee_id=employee_id, skill_id=skill_id))
         await db.commit()
-    return await list_employee_skills(db, employee_id)
+    return await list_employee_skills(db, employee_id, organization_id)
 
-
-async def remove_skill(db: AsyncSession, employee_id: uuid.UUID, skill_id: uuid.UUID) -> list[Skill]:
+async def remove_skill(
+    db: AsyncSession, employee_id: uuid.UUID, skill_id: uuid.UUID, organization_id: uuid.UUID
+) -> list[Skill]:
+    await get_employee_for_org(db, employee_id, organization_id)
     await db.execute(
         sa_delete(EmployeeSkill).where(EmployeeSkill.employee_id == employee_id, EmployeeSkill.skill_id == skill_id)
     )
     await db.commit()
-    return await list_employee_skills(db, employee_id)
+    return await list_employee_skills(db, employee_id, organization_id)

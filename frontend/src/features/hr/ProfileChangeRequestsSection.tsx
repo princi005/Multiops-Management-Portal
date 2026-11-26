@@ -8,6 +8,7 @@ import ErrorState from "../../components/ErrorState";
 import EmptyState from "../../components/EmptyState";
 import ChangeStatusBadge from "../../components/ChangeStatusBadge";
 import ChangeRequestText from "../../components/ChangeRequestText";
+import ChangeRequestEvidencePanel from "./ChangeRequestEvidencePanel";
 import type { ChangeRequestForHr, ChangeStatus } from "../../types/profileChange";
 
 interface Deciding {
@@ -23,6 +24,7 @@ export default function ProfileChangeRequestsSection() {
 
   const [deciding, setDeciding] = useState<Deciding | null>(null);
   const [note, setNote] = useState("");
+  const [evidenceFor, setEvidenceFor] = useState<string | null>(null);
 
   function startDeciding(r: ChangeRequestForHr, approve: boolean) {
     setDeciding({ id: r.id, approve, general: r.field === "general" });
@@ -111,6 +113,13 @@ export default function ProfileChangeRequestsSection() {
                     <td className="px-5 py-3">
                       <ChangeRequestText request={r} />
                       {r.reason && <p className="mt-1 text-xs text-slate-500 whitespace-pre-line">Reason: {r.reason}</p>}
+                      <button
+                        type="button"
+                        onClick={() => setEvidenceFor(evidenceFor === r.id ? null : r.id)}
+                        className="mt-2 text-xs font-medium text-teal-700 hover:text-teal-900"
+                      >
+                        {evidenceFor === r.id ? "Hide supporting documents" : "Review supporting documents"}
+                      </button>
                     </td>
                     <td className="px-5 py-3">
                       <ChangeStatusBadge status={r.status} />
@@ -138,6 +147,13 @@ export default function ProfileChangeRequestsSection() {
                       )}
                     </td>
                   </tr>
+                  {evidenceFor === r.id && (
+                    <tr className="bg-slate-50">
+                      <td colSpan={5} className="px-5 py-4">
+                        <ChangeRequestEvidencePanel requestId={r.id} />
+                      </td>
+                    </tr>
+                  )}
                   {deciding && deciding.id === r.id && (
                     <tr className="bg-slate-50">
                       <td colSpan={5} className="px-5 py-4">

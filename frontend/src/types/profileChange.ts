@@ -9,6 +9,14 @@ export const CHANGE_FIELD_LABELS: Record<ChangeField, string> = {
   general: "Request",
 };
 
+export interface ChangeEvidence {
+  id: string;
+  request_id: string;
+  original_filename: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_at: string;
+}
 export interface ChangeRequest {
   id: string;
   field: ChangeField;

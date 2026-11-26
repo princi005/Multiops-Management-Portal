@@ -1,10 +1,11 @@
-﻿import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Outlet, Route, Routes } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 import { useAuthStore } from "./store/authStore";
 import { useCurrentUser } from "./hooks/useCurrentUser";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PortalSidebar from "./components/PortalSidebar";
+import AssistantLauncher from "./components/AssistantLauncher";
 
 const LoginPage = lazy(() => import("./features/auth/LoginPage"));
 const DashboardPage = lazy(() => import("./features/auth/DashboardPage"));
@@ -91,6 +92,7 @@ function App() {
           <Route path="admin/platform" element={<SuperAdminPage />} />
         </Route>
       </Routes>
+      <AssistantLauncher />
     </Suspense>
   );
 }

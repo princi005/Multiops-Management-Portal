@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CalendarDays, Clock3, Video } from "lucide-react";
 import PortalHeader from "../../components/PortalHeader";
 import SurfaceCard from "../../components/ui/SurfaceCard";
@@ -150,14 +150,17 @@ export default function MyMeetingsPage() {
                   </div>
 
                   {meeting.platform === "Zoom" && (
-                    <a
-                      href="https://zoom.us/"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-800"
-                    >
-                      Open Zoom
-                    </a>
+                    <>
+                      <a
+                        href="https://zoom.us/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-800"
+                      >
+                        Open Zoom
+                      </a>
+                      <p className="w-full text-right text-xs text-slate-500">Preview link opens Zoom; a meeting-specific invite URL is not connected yet.</p>
+                    </>
                   )}
                 </article>
               ))}

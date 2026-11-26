@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
+import { getActiveOrganizationId } from "../lib/activeOrganization";
 import type {
   ApproveEmployeeRequestPayload,
   CreateEmployeeRequestPayload,
@@ -8,8 +9,9 @@ import type {
 } from "../types/employeeRequest";
 
 export function useEmployeeRequests() {
+  const organizationId = getActiveOrganizationId();
   return useQuery({
-    queryKey: ["employeeRequests"],
+    queryKey: ["employeeRequests", organizationId],
     queryFn: async () => {
       const { data } = await apiClient.get<EmployeeRequest[]>("/employee-requests");
       return data;

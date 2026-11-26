@@ -1,4 +1,4 @@
-﻿import { CalendarDays, FileText, HeartHandshake, UserRoundPlus } from "lucide-react";
+import { CalendarDays, FileText, HeartHandshake, UserRoundPlus } from "lucide-react";
 import PortalHeader from "../../components/PortalHeader";
 
 const workflows = [
@@ -18,7 +18,14 @@ export default function HRWorkflowsPage() {
           <h2 className="mt-2 text-3xl font-extrabold">HR Workflows & Policies</h2>
           <p className="mt-2 text-sm text-slate-500">Onboarding, offboarding, leave guidance, and employee recognition.</p>
         </section>
-        <section className="grid gap-4 md:grid-cols-2">
+        <section className="rounded-2xl border p-5" style={{ backgroundColor: "var(--mo-surface)", borderColor: "var(--mo-border)" }}>
+          <h3 className="font-bold">Leave review path</h3>
+          <ol className="mt-4 grid gap-3 sm:grid-cols-2">
+            <li className="rounded-xl bg-violet-50 p-4"><span className="text-xs font-bold uppercase text-violet-700">Step 1</span><p className="mt-1 font-semibold">Manager review</p><p className="mt-1 text-sm text-slate-600">The manager reviews dates, coverage, and request details.</p></li>
+            <li className="rounded-xl bg-cyan-50 p-4"><span className="text-xs font-bold uppercase text-cyan-700">Step 2</span><p className="mt-1 font-semibold">HR review</p><p className="mt-1 text-sm text-slate-600">HR completes the final review and keeps the request history.</p></li>
+          </ol>
+          <p className="mt-3 text-xs text-slate-500">UI preview only · approvals are not connected here.</p>
+        </section>        <section className="grid gap-4 md:grid-cols-2">
           {workflows.map((item) => {
             const Icon = item.icon;
             return (

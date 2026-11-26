@@ -1,8 +1,8 @@
-﻿"""Organization, membership, platform administration, settings, and admin audit."""
+"""Organization, membership, platform administration, settings, and admin audit."""
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -21,6 +21,11 @@ class Organization(Base):
     subscription_plan: Mapped[str] = mapped_column(String(40), default="trial", nullable=False)
     subscription_status: Mapped[str] = mapped_column(String(30), default="trial", nullable=False)
     subscription_reference: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    subscription_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    subscription_renews_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    subscription_rate_amount: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    subscription_rate_currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
+    subscription_rate_period: Mapped[str | None] = mapped_column(String(40), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 

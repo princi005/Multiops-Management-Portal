@@ -11,7 +11,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -69,6 +69,66 @@ class EmployeeIssue(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+class EmployeeAsset(Base):
+    __tablename__ = "employee_assets"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "device_id", name="uq_employee_assets_org_device_id"),
+        CheckConstraint(
+            "status IN ('in_use', 'needs_attention', 'under_repair')",
+            name="ck_employee_assets_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("employees.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    device_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="in_use", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class EmployeeAssetRequest(Base):
+    __tablename__ = "employee_asset_requests"
+    __table_args__ = (
+        CheckConstraint(
+            "request_type IN ('repair', 'replacement', 'other_issue')",
+            name="ck_employee_asset_requests_type",
+        ),
+        CheckConstraint(
+            "status IN ('open', 'in_progress', 'resolved', 'withdrawn')",
+            name="ck_employee_asset_requests_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    employee_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("employees.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    asset_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("employee_assets.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    request_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    support_team: Mapped[str] = mapped_column(String(40), default="IT", nullable=False)
+    details: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="open", nullable=False)
+    response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    handled_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

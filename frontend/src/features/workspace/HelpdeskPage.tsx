@@ -1,6 +1,7 @@
-﻿import { LifeBuoy, MessageSquareText, ShieldCheck } from "lucide-react";
+import { LifeBuoy, MessageSquareText, ShieldCheck } from "lucide-react";
 import PortalHeader from "../../components/PortalHeader";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { Link } from "react-router-dom";
 import IssuesSection from "../employee/IssuesSection";
 
 export default function HelpdeskPage() {
@@ -57,6 +58,9 @@ export default function HelpdeskPage() {
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Use My Profile → My Assets to draft a device repair, replacement, or issue request.
             </p>
+            <Link to="/my-profile" className="mt-4 inline-flex rounded-lg border px-3 py-2 text-sm font-semibold text-violet-800 hover:bg-violet-50" style={{ borderColor: "var(--mo-border)" }}>
+              Open My Assets
+            </Link>
           </article>
         </section>
 

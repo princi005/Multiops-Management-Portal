@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { BookOpen, FilePlus2, ShieldCheck } from "lucide-react";
 import PortalHeader from "../../components/PortalHeader";
 import SurfaceCard from "../../components/ui/SurfaceCard";
@@ -72,6 +72,17 @@ export default function DocsPage() {
           ))}
         </section>
 
+        <section className="rounded-2xl border p-5" style={{ backgroundColor: "var(--mo-surface)", borderColor: "var(--mo-border)" }}>
+          <h2 className="font-bold">Quick policy access</h2>
+          <p className="mt-1 text-sm text-slate-500">Open the policy preview in the company library.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {["posh-policy", "employee-code", "leave-policy"].map((id) => {
+              const document = documents.find((item) => item.id === id);
+              if (!document) return null;
+              return <button key={id} type="button" onClick={() => setSelected(document)} className="rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-violet-50" style={{ borderColor: "var(--mo-border)" }}>{document.title}</button>;
+            })}
+          </div>
+        </section>
         {canPreviewUpload && (
           <section>
             <div className="mb-3 flex items-center gap-2">

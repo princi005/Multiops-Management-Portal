@@ -28,6 +28,149 @@ class MyProfile(BaseModel):
     roles: list[str]
 
 
+class MyPersonalDetailsRead(BaseModel):
+    model_config = {"from_attributes": True}
+
+    employee_id: uuid.UUID
+    organization_id: uuid.UUID
+    personal_email: str | None = None
+    date_of_birth: date | None = None
+    linkedin_url: str | None = None
+    about: str | None = None
+    hobbies: str | None = None
+    current_address: str | None = None
+    permanent_address: str | None = None
+    emergency_contact_name: str | None = None
+    emergency_contact_relationship: str | None = None
+    emergency_contact_phone: str | None = None
+    married: bool = False
+    spouse_name: str | None = None
+    spouse_profession: str | None = None
+    children: str | None = None
+    parents_or_guardians: str | None = None
+    blood_group: str | None = None
+    allergies: str | None = None
+    health_conditions: str | None = None
+    medications: str | None = None
+    birthday_visible: bool = True
+    work_anniversary_visible: bool = True
+    updated_at: datetime | None = None
+
+
+class MyPersonalDetailsUpdate(BaseModel):
+    personal_email: str | None = Field(default=None, max_length=255)
+    date_of_birth: date | None = None
+    linkedin_url: str | None = Field(default=None, max_length=500)
+    about: str | None = None
+    hobbies: str | None = None
+    current_address: str | None = None
+    permanent_address: str | None = None
+    emergency_contact_name: str | None = Field(default=None, max_length=200)
+    emergency_contact_relationship: str | None = Field(default=None, max_length=100)
+    emergency_contact_phone: str | None = Field(default=None, max_length=30)
+    married: bool | None = None
+    spouse_name: str | None = Field(default=None, max_length=200)
+    spouse_profession: str | None = Field(default=None, max_length=200)
+    children: str | None = None
+    parents_or_guardians: str | None = None
+    blood_group: str | None = Field(default=None, max_length=3)
+    allergies: str | None = None
+    health_conditions: str | None = None
+    medications: str | None = None
+    birthday_visible: bool | None = None
+    work_anniversary_visible: bool | None = None
+
+class ProfileExperienceRead(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    company: str
+    role: str
+    duration: str
+    description: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProfileExperienceCreate(BaseModel):
+    company: str = Field(min_length=1, max_length=160)
+    role: str = Field(min_length=1, max_length=120)
+    duration: str = Field(min_length=1, max_length=80)
+    description: str | None = Field(default=None, max_length=10000)
+
+    @field_validator("company", "role", "duration")
+    @classmethod
+    def clean_required_text(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("This field cannot be empty.")
+        return cleaned
+
+    @field_validator("description")
+    @classmethod
+    def limit_description_words(cls, value: str | None) -> str | None:
+        if value is not None and len(value.split()) > 1000:
+            raise ValueError("Experience descriptions can contain at most 1,000 words.")
+        return value
+
+
+class ProfileExperienceUpdate(BaseModel):
+    company: str | None = Field(default=None, min_length=1, max_length=160)
+    role: str | None = Field(default=None, min_length=1, max_length=120)
+    duration: str | None = Field(default=None, min_length=1, max_length=80)
+    description: str | None = Field(default=None, max_length=10000)
+
+    @field_validator("company", "role", "duration")
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("This field cannot be empty.")
+        return cleaned
+
+    @field_validator("description")
+    @classmethod
+    def limit_description_words(cls, value: str | None) -> str | None:
+        if value is not None and len(value.split()) > 1000:
+            raise ValueError("Experience descriptions can contain at most 1,000 words.")
+        return value
+
+
+class ProfileCourseRead(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    name: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProfileCourseCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Course name cannot be empty.")
+        return cleaned
+
+
+class ProfileCourseUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Course name cannot be empty.")
+        return cleaned
+
+
 class MySkillsUpdate(BaseModel):
     skills: list[str] = Field(max_length=MAX_SKILLS)
 

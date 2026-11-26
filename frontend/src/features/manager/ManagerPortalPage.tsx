@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FolderKanban, Plus, Trash2, UserRound } from "lucide-react";
 import EmptyState from "../../components/EmptyState";
@@ -28,6 +28,7 @@ export default function ManagerPortalPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [projectStatusFilter, setProjectStatusFilter] = useState("all");
   const [creating, setCreating] = useState(false);
   const [showBin, setShowBin] = useState(false);
 
@@ -41,13 +42,14 @@ export default function ManagerPortalPage() {
 
   const visibleProjects = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
-    if (!term) return list;
-    return list.filter((project) =>
+    const statusMatches = (project: Project) => projectStatusFilter === "all" || project.status === projectStatusFilter;
+    if (!term) return list.filter(statusMatches);
+    return list.filter((project) => statusMatches(project) && (
       project.name.toLocaleLowerCase().includes(term) ||
       (project.description ?? "").toLocaleLowerCase().includes(term) ||
-      (project.technology ?? "").toLocaleLowerCase().includes(term),
+      (project.technology ?? "").toLocaleLowerCase().includes(term)),
     );
-  }, [list, search]);
+  }, [list, search, projectStatusFilter]);
 
   const active = visibleProjects.find((project) => project.id === selectedId) ?? visibleProjects[0] ?? null;
   const isOwner = Boolean(active && profile && active.manager_id === profile.employee_id);
@@ -138,6 +140,14 @@ export default function ManagerPortalPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search projects…"
+              <label className="mt-3 block text-xs font-semibold">
+                <span className="sr-only">Filter projects by status</span>
+                <select value={projectStatusFilter} onChange={(event) => setProjectStatusFilter(event.target.value)} className="manager-workspace__search">
+                  <option value="all">All project statuses</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </label>
                 className="manager-workspace__search"
               />
 

@@ -14,6 +14,7 @@ import RequestFilterBar from "../../components/RequestFilterBar";
 import EmployeeEditPanel from "./EmployeeEditPanel";
 import AddEmployeePanel from "./AddEmployeePanel";
 import ProfileChangeRequestsSection from "./ProfileChangeRequestsSection";
+import EmployeeIdentityDocumentsPanel from "./EmployeeIdentityDocumentsPanel";
 import type { Employee } from "../../types/employee";
 import type { RequestStatus } from "../../types/employeeRequest";
 
@@ -30,6 +31,7 @@ export default function EmployeeListPage() {
   const { data: requests } = useEmployeeRequests();
   const [editing, setEditing] = useState<Employee | null>(null);
   const [adding, setAdding] = useState(false);
+  const [documentsFor, setDocumentsFor] = useState<Employee | null>(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "all">("all");
@@ -99,6 +101,12 @@ export default function EmployeeListPage() {
                     </td>
                     <td className="px-5 py-3 text-slate-600">{emp.phone ?? "-"}</td>
                     <td className="px-5 py-3 text-right">
+                      <button
+                        onClick={() => setDocumentsFor(emp)}
+                        className="mr-3 text-sm font-medium text-slate-600 hover:text-slate-800"
+                      >
+                        Documents
+                      </button>
                       <button
                         onClick={() => setEditing(emp)}
                         className="flex items-center gap-1 text-teal-600 text-sm font-medium ml-auto hover:text-teal-700"
@@ -179,6 +187,13 @@ export default function EmployeeListPage() {
       </main>
 
       {editing && <EmployeeEditPanel employee={editing} onClose={() => setEditing(null)} />}
+      {documentsFor && (
+        <EmployeeIdentityDocumentsPanel
+          employeeId={documentsFor.id}
+          employeeCode={documentsFor.employee_code}
+          onClose={() => setDocumentsFor(null)}
+        />
+      )}
       {adding && <AddEmployeePanel onClose={() => setAdding(false)} />}
     </div>
   );

@@ -1,6 +1,7 @@
-﻿from app.models.audit_log import AuditLog  # noqa: F401
+from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.department import Department  # noqa: F401
 from app.models.employee import AvailabilityStatus, Employee, EmploymentStatus  # noqa: F401
+from app.models.employee_profile_details import EmployeeProfileDetails  # noqa: F401
 from app.models.employee_issue import EmployeeIssue, IssueCategory, IssueStatus  # noqa: F401
 from app.models.employee_request import EmployeeRequest, RequestStatus, RequestType  # noqa: F401
 from app.models.employee_resume import EmployeeResume  # noqa: F401

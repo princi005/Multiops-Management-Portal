@@ -1,5 +1,6 @@
-﻿import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import type { DragEvent } from "react";
+import type { FormEvent } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid, List, Search } from "lucide-react";
 import type { DirectoryEmployee, Ticket, TicketStatus } from "../../types/project";
 
@@ -41,6 +42,67 @@ function displayName(person: DirectoryEmployee | undefined) {
   return person?.full_name || person?.email || "Assigned";
 }
 
+type PreviewReply = {
+  id: number;
+  body: string;
+  createdAt: string;
+};
+
+function TicketDiscussionPreview({ ticketId }: { ticketId: string }) {
+  const [draft, setDraft] = useState("");
+  const [replies, setReplies] = useState<PreviewReply[]>([]);
+
+  function submitReply(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const body = draft.trim();
+    if (!body) return;
+    setReplies((items) => [...items, { id: Date.now(), body, createdAt: new Date().toLocaleString() }]);
+    setDraft("");
+  }
+
+  return (
+    <details className="mt-3 border-t pt-3" style={{ borderColor: "var(--mo-border)" }}>
+      <summary className="cursor-pointer text-xs font-semibold text-violet-700">
+        Comments & activity ({replies.length})
+      </summary>
+      <p className="mt-2 text-[11px] text-slate-500">
+        Preview only · replies are kept in this page session and are not sent or saved.
+      </p>
+      {replies.length > 0 && (
+        <ul className="mt-2 space-y-2" aria-label={`Preview replies for ticket ${ticketId}`}>
+          {replies.map((reply) => (
+            <li key={reply.id} className="rounded-lg bg-slate-50 p-2 text-xs">
+              <time className="text-slate-400">{reply.createdAt}</time>
+              <p className="mt-1 whitespace-pre-wrap text-slate-700">{reply.body}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      <form onSubmit={submitReply} className="mt-2 space-y-2">
+        <label className="sr-only" htmlFor={`ticket-reply-${ticketId}`}>Write a ticket reply</label>
+        <textarea
+          id={`ticket-reply-${ticketId}`}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          maxLength={1000}
+          rows={2}
+          placeholder="Add a comment or progress update…"
+          className="w-full rounded-lg border bg-white px-3 py-2 text-xs"
+          style={{ borderColor: "var(--mo-border)" }}
+        />
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={!draft.trim()}
+            className="rounded-lg bg-violet-700 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+          >
+            Add preview comment
+          </button>
+        </div>
+      </form>
+    </details>
+  );
+}
 export default function TicketWorkspaceViews({
   tickets,
   directory,
@@ -271,6 +333,7 @@ export default function TicketWorkspaceViews({
                           style={{ borderColor: "var(--mo-border)" }}>
                           {availableStatuses.map((option) => <option key={option} value={option}>{STATUS_LABELS[option]}</option>)}
                         </select>
+                        <TicketDiscussionPreview ticketId={ticket.id} />
                       </article>
                     );
                   })}
@@ -308,6 +371,7 @@ export default function TicketWorkspaceViews({
                   <td className="max-w-sm px-4 py-3">
                     <p className="font-semibold">{ticket.title}</p>
                     {ticket.description && <p className="mt-1 truncate text-xs text-slate-500">{ticket.description}</p>}
+                    <TicketDiscussionPreview ticketId={ticket.id} />
                   </td>
                   <td className="px-4 py-3 text-slate-600">{personName(ticket.assigned_to_id)}</td>
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-bold capitalize ${priorityStyle(ticket.priority)}`}>{ticket.priority}</span></td>

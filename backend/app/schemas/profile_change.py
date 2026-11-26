@@ -40,7 +40,18 @@ class ChangeRequestRead(BaseModel):
 
 
 class ChangeRequestHRRead(ChangeRequestRead):
+    organization_id: uuid.UUID | None
     employee_id: uuid.UUID
     employee_code: str
     employee_name: str | None
     employee_email: str
+
+class ChangeEvidenceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    request_id: uuid.UUID
+    original_filename: str
+    content_type: str
+    size_bytes: int
+    uploaded_at: datetime
