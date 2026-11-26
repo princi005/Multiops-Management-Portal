@@ -142,3 +142,17 @@ Note: tests run against the real Supabase dev database (no separate
 
 test DB in Phase 1) — see test suite docstrings for the trade-offs.
 
+
+
+## PowerShell migration command (Windows)
+
+Run from the backend directory with its virtual environment installed:
+
+```powershell
+.\venv\Scripts\python.exe -m alembic current
+.\venv\Scripts\python.exe -m alembic heads
+.\venv\Scripts\python.exe -m alembic upgrade head
+.\venv\Scripts\python.exe -m alembic current
+```
+
+The first and final current commands show the database revision. Compare it with heads. Running alembic without activating the backend environment may fail because the executable is not on PATH.

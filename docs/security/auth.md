@@ -76,3 +76,10 @@ No public self-registration endpoint exists. Accounts are created by:
 
 &#x20; contain placeholders only.
 
+
+
+## Current organization authorization note (2026-11-26)
+
+The project has both legacy global role checks and organization-membership role checks. Organization membership is enforced on routes that depend on the active organization, but organization-aware authorization is not yet universal. Review route dependencies and service queries when changing access rules; a valid Supabase token alone does not grant access to organization data.
+
+Platform Admin membership is provisioned out-of-band. Never accept platform privileges or organization identity supplied only by the client.

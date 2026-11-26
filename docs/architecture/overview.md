@@ -139,3 +139,12 @@ services: Supabase Free/Pro, no paid AI API in the current phase (see
 
 planned Ollama-based approach for future AI features).
 
+
+
+## Current implementation overview (2026-11-26)
+
+The application uses a React, TypeScript, and Vite frontend with a FastAPI backend, SQLAlchemy, Alembic, and PostgreSQL hosted on Supabase. Supabase Auth handles authentication; backend route dependencies and services enforce authorization.
+
+Current code includes organization and platform administration, subscription metadata, employee profile and identity-document workflows, profile-change requests and evidence, assets, projects, tickets, payroll, and general-ledger modules. The backend routers and the running OpenAPI document define the current API surface.
+
+Organization-aware authorization and data scoping are implemented only on a subset of routes. Verify each model, migration, route, and service before assuming tenant isolation or end-to-end workflow completion. The AI Assistant is a frontend placeholder; no model calls, RAG, or inference are implemented.

@@ -54,3 +54,8 @@ later is a config change, not a rewrite.
 
 &#x20; before building the full AI Knowledge Assistant UI around it.
 
+
+
+## Current product boundary (2026-11-26)
+
+The current AI Assistant is a frontend placeholder. No model calls, Ollama integration, RAG, or inference workflow is part of the implemented product. The proposal above remains a historical/proposed architecture decision and must not be described as an active integration.

@@ -114,3 +114,10 @@ pytest -v
 
 \- \[Architecture Decision Records](docs/adr/)
 
+
+
+## Current implementation status (2026-11-26)
+
+The application has grown beyond the original Phase 1 scope. Current code includes organization and platform administration, subscription metadata, employee profile and identity-document workflows, profile-change requests with supporting evidence, employee assets, projects, tickets, payroll, and general-ledger modules.
+
+This list describes implemented code paths; it does not certify that every workflow has passed local integration checks. Run the backend and frontend and verify each workflow before treating it as production-ready. See the API, database, setup, and tenant-isolation documents linked below for implementation details and limitations.

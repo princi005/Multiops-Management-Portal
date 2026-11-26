@@ -1,4 +1,4 @@
-﻿# Organization Administration API
+# Organization Administration API
 
 All endpoints require a valid Supabase-authenticated bearer token.
 
@@ -20,3 +20,13 @@ All endpoints require a valid Supabase-authenticated bearer token.
 
 Platform Admin access is provisioned out-of-band by an authorized database operator through
 `docs/database/platform-admin-bootstrap.sql`. Never accept a platform-admin flag from the client.
+
+
+## Subscription-rate and platform audit routes
+
+- `GET /organizations/{org_id}/subscription-rate` — Organization Admin reads the organization's rate.
+- `PATCH /organizations/{org_id}/subscription-rate` — Organization Admin sets amount, currency, and period; the change is recorded in the organization admin log.
+- `GET /platform/audit` — Platform Admin reviews the latest platform-visible organization admin events.
+- `GET /platform/organizations` — Platform Admin sees organization subscription metadata and active member counts.
+
+These endpoints expose subscription metadata, not payment processing. See the live OpenAPI document for full request/response schemas and access dependencies.

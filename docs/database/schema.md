@@ -96,3 +96,12 @@ knowledge\_risks — per the full product roadmap.
 
 
 
+
+
+## Current schema and migration state (2026-11-26)
+
+The Phase 1 entity list and “Future Entities” list above are historical and incomplete. The current SQLAlchemy models and Alembic migrations define the schema. Current model areas include users and roles, organizations and memberships, departments and employees, employee profile details and identity documents, employee assets and issues, employee requests and profile-change evidence, projects and tickets, payroll, notifications, and general-ledger records.
+
+Migrations are managed in `backend/alembic/versions/`. The reported database revision and repository head were both `e2f4a91c7b60`. Check them again after pulling new migrations. Apply migrations from the backend environment with `.\venv\Scripts\python.exe -m alembic upgrade head`.
+
+A migration head confirms Alembic revision state; it does not prove every table has organization-level isolation or that every application workflow works.

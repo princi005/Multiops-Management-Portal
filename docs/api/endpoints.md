@@ -98,3 +98,10 @@ directly for testing).
 
 
 
+
+
+## Current API surface (2026-11-26)
+
+The original Phase 1 list above is incomplete. The backend also registers APIs for organization and platform administration, employee profile and identity documents, profile-change requests and evidence, employee assets and asset requests, employee issues, projects and tickets, payroll, notifications, skills, and general-ledger records.
+
+For the complete current paths, methods, schemas, and interactive requests, use the running backend's `/openapi.json`, `/docs`, or `/redoc`. Router source is under `backend/app/api/routes/`. Access requirements are enforced by route dependencies and services; do not infer that a route is public from this summary.
